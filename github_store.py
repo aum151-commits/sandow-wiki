@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Хранилище страниц вики в приватном GitHub-репозитории через Contents API.
+"""Хранилище JSON-файлов в приватном GitHub-репозитории через Contents API.
 
-Все страницы лежат одним JSON-файлом в отдельном приватном репозитории
-(не в этом, публичном, репозитории с кодом приложения). Локального клона
-нет — читаем/пишем строго через API, как gh_push_file.py в других
-автоматизациях проекта.
+Три независимых файла в одном приватном репозитории (не в этом, публичном,
+репозитории с кодом приложения): страницы вики/уроков, аккаунты, прогресс
+по урокам. Локального клона нет — читаем/пишем строго через API, как
+gh_push_file.py в других автоматизациях проекта.
 """
 
 import base64
@@ -16,49 +16,62 @@ import requests
 
 TOKEN = os.environ["GITHUB_TOKEN_WORKFLOW"]
 REPO = os.environ.get("WIKI_REPO", "aum151-commits/sandow-automation")
-PATH = os.environ.get("WIKI_PATH", "wiki-content/pages.json")
-API = f"https://api.github.com/repos/{REPO}/contents/{PATH}"
+API_BASE = f"https://api.github.com/repos/{REPO}/contents"
 HEAD = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github+json"}
-
 CACHE_TTL = 20  # секунд
-_cache = {"data": None, "sha": None, "ts": 0.0}
 
 
-def _fetch():
-    r = requests.get(API, headers=HEAD, timeout=30)
-    if r.status_code == 404:
-        return {}, None
-    r.raise_for_status()
-    j = r.json()
-    content = base64.b64decode(j["content"]).decode("utf-8")
-    return json.loads(content), j["sha"]
+class JsonFileStore:
+    def __init__(self, path: str, default):
+        self.path = path
+        self.default = default
+        self._cache = {"data": None, "sha": None, "ts": 0.0}
+
+    @property
+    def _api(self):
+        return f"{API_BASE}/{self.path}"
+
+    def _fetch(self):
+        r = requests.get(self._api, headers=HEAD, timeout=30)
+        if r.status_code == 404:
+            return json.loads(json.dumps(self.default)), None
+        r.raise_for_status()
+        j = r.json()
+        content = base64.b64decode(j["content"]).decode("utf-8")
+        return json.loads(content), j["sha"]
+
+    def load(self, force=False):
+        now = time.time()
+        if force or self._cache["data"] is None or now - self._cache["ts"] > CACHE_TTL:
+            data, sha = self._fetch()
+            self._cache.update(data=data, sha=sha, ts=now)
+        return self._cache["data"]
+
+    def save(self, data, message: str):
+        body = json.dumps(data, ensure_ascii=False, indent=2)
+        payload = {
+            "message": message,
+            "content": base64.b64encode(body.encode("utf-8")).decode(),
+            "committer": {"name": "Sandow Wiki", "email": "bot@sandowfitness.ru"},
+        }
+        if self._cache["sha"]:
+            payload["sha"] = self._cache["sha"]
+
+        r = requests.put(self._api, headers=HEAD, json=payload, timeout=60)
+        if r.status_code == 409:
+            # кто-то успел сохранить параллельно — перечитать и повторить один раз
+            self.load(force=True)
+            payload["sha"] = self._cache["sha"]
+            r = requests.put(self._api, headers=HEAD, json=payload, timeout=60)
+        r.raise_for_status()
+        j = r.json()
+        self._cache.update(data=data, sha=j["content"]["sha"], ts=time.time())
+        return data
 
 
-def load(force=False):
-    now = time.time()
-    if force or _cache["data"] is None or now - _cache["ts"] > CACHE_TTL:
-        data, sha = _fetch()
-        _cache.update(data=data, sha=sha, ts=now)
-    return _cache["data"]
-
-
-def save(pages: dict, message: str):
-    body = json.dumps(pages, ensure_ascii=False, indent=2)
-    payload = {
-        "message": message,
-        "content": base64.b64encode(body.encode("utf-8")).decode(),
-        "committer": {"name": "Sandow Wiki", "email": "bot@sandowfitness.ru"},
-    }
-    if _cache["sha"]:
-        payload["sha"] = _cache["sha"]
-
-    r = requests.put(API, headers=HEAD, json=payload, timeout=60)
-    if r.status_code == 409:
-        # кто-то успел сохранить страницу параллельно — перечитать и повторить один раз
-        load(force=True)
-        payload["sha"] = _cache["sha"]
-        r = requests.put(API, headers=HEAD, json=payload, timeout=60)
-    r.raise_for_status()
-    j = r.json()
-    _cache.update(data=pages, sha=j["content"]["sha"], ts=time.time())
-    return pages
+WIKI_PATH = os.environ.get("WIKI_PATH", "wiki-content/pages.json")
+USERS_PATH = os.environ.get("WIKI_USERS_PATH", "wiki-content/users.json")
+PROGRESS_PATH = os.environ.get("WIKI_PROGRESS_PATH", "wiki-content/progress.json")
+pages_store = JsonFileStore(WIKI_PATH, default={})
+users_store = JsonFileStore(USERS_PATH, default={})
+progress_store = JsonFileStore(PROGRESS_PATH, default={})

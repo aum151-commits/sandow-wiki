@@ -3,20 +3,21 @@
 {% block content %}
 <div class="login-wrap">
   <h1>Сандов Фитнес</h1>
-  <p style="color:var(--muted)">База знаний и обучение</p>
+  <p style="color:var(--muted)">Обучение и база знаний</p>
   <div class="card">
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
     <form method="post">
       <div class="field">
-        <label for="name">Как вас записать (для истории правок)</label>
-        <input type="text" id="name" name="name" placeholder="Например: Ольга">
+        <label for="username">Логин</label>
+        <input type="text" id="username" name="username" required autofocus autocapitalize="off">
       </div>
       <div class="field">
         <label for="password">Пароль</label>
-        <input type="password" id="password" name="password" required autofocus>
+        <input type="password" id="password" name="password" required>
       </div>
       <button type="submit">Войти</button>
     </form>
   </div>
+  <p style="margin-top:14px"><a href="{{ url_for('register') }}">Нет аккаунта — зарегистрироваться</a></p>
 </div>
 {% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — Сандов Фитнес{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <h1>Регистрация</h1>
+  <p style="color:var(--muted)">Личный вход — чтобы прогресс по урокам считался за вами</p>
+  <div class="card">
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post">
+      <div class="field">
+        <label for="display_name">Ваше имя</label>
+        <input type="text" id="display_name" name="display_name" placeholder="Например: Ольга" required>
+      </div>
+      <div class="field">
+        <label for="username">Логин</label>
+        <input type="text" id="username" name="username" placeholder="латиницей, без пробелов" required autocapitalize="off">
+      </div>
+      <div class="field">
+        <label for="password">Пароль</label>
+        <input type="password" id="password" name="password" required minlength="6">
+      </div>
+      <div class="field">
+        <label for="invite">Код приглашения</label>
+        <input type="text" id="invite" name="invite" placeholder="узнать у Ольги" required>
+      </div>
+      <button type="submit">Зарегистрироваться</button>
+    </form>
+  </div>
+  <p style="margin-top:14px"><a href="{{ url_for('login') }}">Уже есть аккаунт — войти</a></p>
+</div>
+{% endblock %}

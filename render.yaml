@@ -13,7 +13,9 @@ services:
     envVars:
       - key: SECRET_KEY
         sync: false
-      - key: WIKI_PASSWORD_HASH
+      - key: INVITE_CODE
+        sync: false
+      - key: ADMIN_INVITE_CODE
         sync: false
       - key: GITHUB_TOKEN_WORKFLOW
         sync: false
@@ -21,5 +23,7 @@ services:
         sync: false
       - key: WIKI_PATH
         sync: false
-      - key: STEPIK_URL
+      - key: WIKI_USERS_PATH
+        sync: false
+      - key: WIKI_PROGRESS_PATH
         sync: false

@@ -3,17 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Сандов Фитнес — база знаний{% endblock %}</title>
+<title>{% block title %}Сандов Фитнес{% endblock %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 {% block head %}{% endblock %}
 </head>
 <body>
 <header class="topbar">
   <a class="brand" href="{{ url_for('home') }}">Сандов Фитнес</a>
-  {% if session.get('ok') %}
+  {% if current_user %}
   <nav>
     <a href="{{ url_for('home') }}">Главная</a>
+    <a href="{{ url_for('course_list') }}">Обучение</a>
     <a href="{{ url_for('wiki_list') }}">База знаний</a>
+    {% if current_user_is_admin %}<a href="{{ url_for('admin_users') }}">Сотрудники</a>{% endif %}
     <a href="{{ url_for('logout') }}">Выйти</a>
   </nav>
   {% endif %}

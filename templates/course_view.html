@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} — Сандов Фитнес{% endblock %}
+{% block content %}
+<div class="card">
+  <p class="meta" style="color:var(--muted)">Урок {{ page.course_order }} · обновлено {{ page.updated_at[:10] }}</p>
+  <h1>{{ page.title }}</h1>
+  <div class="content-html">{{ page.html | safe }}</div>
+
+  {% if quiz %}
+  <hr style="margin:28px 0; border-color:var(--border)">
+  <h2>Проверьте себя</h2>
+
+  {% if quiz_result %}
+  <div class="quiz-banner {{ 'pass' if quiz_result.passed else 'fail' }}">
+    {% if quiz_result.passed %}
+      ✅ Тест сдан: {{ quiz_result.correct }} из {{ quiz_result.total }} верно. Урок засчитан.
+    {% else %}
+      ❌ {{ quiz_result.correct }} из {{ quiz_result.total }} верно — для зачёта нужны все ответы. Попробуйте ещё раз.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('course_quiz_submit', slug=slug) }}">
+    {% for q in quiz %}
+    <div class="field quiz-q">
+      <label>{{ loop.index }}. {{ q.question }}</label>
+      {% set qi = loop.index0 %}
+      {% for opt in q.options %}
+      <label class="quiz-opt {% if quiz_result %}
+        {% if loop.index0 in quiz_result.results[qi].correct %}quiz-correct
+        {% elif loop.index0 in quiz_result.results[qi].picked %}quiz-wrong{% endif %}
+      {% endif %}">
+        <input type="checkbox" name="q{{ qi }}" value="{{ loop.index0 }}"
+          {% if quiz_result and loop.index0 in quiz_result.results[qi].picked %}checked{% endif %}>
+        {{ opt }}
+      </label>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    <button type="submit">{{ "Пройти ещё раз" if quiz_result else "Проверить ответы" }}</button>
+  </form>
+
+  {% elif done %}
+  <div class="view-actions">
+    <span class="badge-done">✅ Пройдено{% if entry and entry.completed_at %} {{ entry.completed_at[:10] }}{% endif %}</span>
+    <form method="post" action="{{ url_for('course_complete', slug=slug) }}" style="margin:0">
+      <input type="hidden" name="undo" value="1">
+      <button type="submit" class="btn secondary">Снять отметку</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="view-actions">
+    <form method="post" action="{{ url_for('course_complete', slug=slug) }}" style="margin:0">
+      <button type="submit">Отметить пройденным</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="view-actions" style="margin-top:24px; justify-content:space-between">
+    <div>
+      {% if prev_lesson %}<a class="btn secondary" href="{{ url_for('course_view', slug=prev_lesson.slug) }}">← {{ prev_lesson.title }}</a>{% endif %}
+      {% if next_lesson %}<a class="btn" href="{{ url_for('course_view', slug=next_lesson.slug) }}">{{ next_lesson.title }} →</a>{% endif %}
+    </div>
+    {% if current_user_is_admin %}
+    <a class="btn secondary" href="{{ url_for('wiki_edit_form', slug=slug) }}">Редактировать</a>
+    <form method="post" action="{{ url_for('wiki_delete', slug=slug) }}" onsubmit="return confirm('Удалить урок «{{ page.title }}»?');" style="margin:0">
+      <button type="submit" class="btn secondary" style="color:#c0392b">Удалить</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

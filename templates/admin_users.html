@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Сотрудники — Сандов Фитнес{% endblock %}
+{% block content %}
+<h1>Сотрудники</h1>
+<p style="color:var(--muted)">Доступ можно отключить в любой момент — например, если сотрудник уволился.</p>
+<div class="card">
+  {% if rows %}
+  <ul class="page-list">
+    {% for u in rows %}
+    <li style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+      <div>
+        <a href="#">{{ u.display_name }}</a>
+        <div class="meta">
+          {{ u.username }} · {{ "администратор" if u.role == "admin" else "сотрудник" }}
+          · {{ "активен" if u.get("active", True) else "доступ отключён" }}
+        </div>
+      </div>
+      {% if u.username != current_user %}
+      <form method="post" action="{{ url_for('admin_toggle_user', username=u.username) }}" style="margin:0">
+        <button type="submit" class="btn secondary">
+          {{ "Отключить доступ" if u.get("active", True) else "Включить доступ" }}
+        </button>
+      </form>
+      {% else %}
+      <span class="meta">это вы</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="color:var(--muted)">Пока никто не зарегистрировался.</p>
+  {% endif %}
+</div>
+{% endblock %}

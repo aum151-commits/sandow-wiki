@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Прогресс команды — Сандов Фитнес{% endblock %}
+{% block content %}
+<h1>Прогресс команды</h1>
+<p style="color:var(--muted)">Всего уроков: {{ total }}</p>
+<div class="card">
+  {% if rows %}
+  <ul class="page-list">
+    {% for r in rows %}
+    <li>
+      {{ r.name }}
+      <div class="meta">{{ r.done }} / {{ total }} уроков{% if total %} · {{ (r.done / total * 100) | round | int }}%{% endif %}</div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="color:var(--muted)">Пока никто не зарегистрирован.</p>
+  {% endif %}
+</div>
+{% endblock %}
