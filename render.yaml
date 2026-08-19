@@ -1,0 +1,25 @@
+# База знаний «Сандов Фитнес». Контент хранится не здесь, а в отдельном
+# приватном репозитории через GitHub API (github_store.py) — секреты в
+# коде отсутствуют, репозиторий с приложением можно держать публичным.
+services:
+  - type: web
+    name: sandow-wiki
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 30
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: WIKI_PASSWORD_HASH
+        sync: false
+      - key: GITHUB_TOKEN_WORKFLOW
+        sync: false
+      - key: WIKI_REPO
+        sync: false
+      - key: WIKI_PATH
+        sync: false
+      - key: STEPIK_URL
+        sync: false

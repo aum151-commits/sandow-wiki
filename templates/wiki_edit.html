@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{% if page %}Правка «{{ page.title }}»{% else %}Новая страница{% endif %} — Сандов Фитнес{% endblock %}
+{% block head %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+{% endblock %}
+{% block content %}
+<h1>{% if page %}Правка страницы{% else %}Новая страница{% endif %}</h1>
+<form method="post" action="{% if slug %}{{ url_for('wiki_edit', slug=slug) }}{% else %}{{ url_for('wiki_new') }}{% endif %}" id="pageForm">
+  <div class="field">
+    <label for="title">Название</label>
+    <input type="text" id="title" name="title" value="{{ page.title if page else '' }}" required autofocus>
+  </div>
+  <div class="field">
+    <label>Содержание</label>
+    <div id="toolbar">
+      <select class="ql-header"><option value="1"></option><option value="2"></option><option selected></option></select>
+      <button class="ql-bold"></button>
+      <button class="ql-italic"></button>
+      <button class="ql-underline"></button>
+      <button class="ql-list" value="ordered"></button>
+      <button class="ql-list" value="bullet"></button>
+      <button class="ql-link"></button>
+      <button class="ql-image" title="Вставить картинку по ссылке"></button>
+      <button class="ql-video" title="Вставить видео по ссылке (VK, YouTube)"></button>
+      <button type="button" id="audioBtn" title="Вставить аудио по ссылке">🎵</button>
+      <button class="ql-clean"></button>
+    </div>
+    <div id="editor"></div>
+    <textarea name="html" id="htmlField" style="display:none"></textarea>
+  </div>
+  <button type="submit">Сохранить</button>
+  {% if slug %}<a class="btn secondary" href="{{ url_for('wiki_view', slug=slug) }}">Отмена</a>{% endif %}
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+const startingHtml = {{ (page.html if page else "") | tojson }};
+
+const quill = new Quill('#editor', {
+  theme: 'snow',
+  modules: { toolbar: '#toolbar' },
+  placeholder: 'Текст страницы... для видео и аудио используйте кнопки на панели',
+});
+if (startingHtml) { quill.clipboard.dangerouslyPasteHTML(startingHtml); }
+
+document.getElementById('audioBtn').addEventListener('click', () => {
+  const url = prompt('Ссылка на аудиофайл (mp3/ogg/wav, например с Яндекс.Диска или VK):');
+  if (!url) return;
+  const range = quill.getSelection(true);
+  quill.insertEmbed(range.index, 'audioClip', url, 'user');
+  quill.setSelection(range.index + 1);
+});
+
+const Embed = Quill.import('blots/block/embed');
+class AudioBlot extends Embed {
+  static create(url) {
+    const node = super.create();
+    node.setAttribute('controls', true);
+    node.setAttribute('src', url);
+    return node;
+  }
+  static value(node) { return node.getAttribute('src'); }
+}
+AudioBlot.blotName = 'audioClip';
+AudioBlot.tagName = 'audio';
+Quill.register(AudioBlot);
+
+document.getElementById('pageForm').addEventListener('submit', () => {
+  document.getElementById('htmlField').value = quill.root.innerHTML;
+});
+</script>
+{% endblock %}

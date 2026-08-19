@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} — Сандов Фитнес{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ page.title }}</h1>
+  <p class="meta" style="color:var(--muted)">Обновлено {{ page.updated_at[:16].replace('T',' ') }} · {{ page.updated_by }}</p>
+  <div class="content-html">{{ page.html | safe }}</div>
+  <div class="view-actions">
+    <a class="btn" href="{{ url_for('wiki_edit_form', slug=slug) }}">Редактировать</a>
+    <a class="btn secondary" href="{{ url_for('wiki_list') }}">К списку</a>
+    <form method="post" action="{{ url_for('wiki_delete', slug=slug) }}" onsubmit="return confirm('Удалить страницу «{{ page.title }}»?');" style="margin:0">
+      <button type="submit" class="btn secondary" style="color:#c0392b">Удалить</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

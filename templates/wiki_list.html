@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}База знаний — Сандов Фитнес{% endblock %}
+{% block content %}
+<h1>База знаний</h1>
+<form class="search-row" method="get" action="{{ url_for('wiki_list') }}">
+  <input type="text" name="q" value="{{ q }}" placeholder="Искать по названию и тексту...">
+  <button type="submit">Найти</button>
+  <a class="btn secondary" href="{{ url_for('wiki_new_form') }}">+ Новая страница</a>
+</form>
+<div class="card">
+  {% if items %}
+  <ul class="page-list">
+    {% for it in items %}
+    <li>
+      <a href="{{ url_for('wiki_view', slug=it.slug) }}">{{ it.title }}</a>
+      <div class="meta">Обновлено {{ it.updated_at[:10] }} · {{ it.updated_by }}</div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="color:var(--muted)">{% if q %}Ничего не нашлось по запросу «{{ q }}».{% else %}Страниц пока нет — добавьте первую.{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}

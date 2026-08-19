@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Сандов Фитнес — старт{% endblock %}
+{% block content %}
+<h1>Добро пожаловать</h1>
+<p style="color:var(--muted)">Один вход — два раздела: обучение и база знаний.</p>
+<div class="hub">
+  {% if stepik_url %}
+  <a class="tile" href="{{ stepik_url }}" target="_blank" rel="noopener">
+    <h2>🎓 Обучение</h2>
+    <p>Курсы и тесты на Stepik — откроется в новой вкладке</p>
+  </a>
+  {% else %}
+  <div class="tile disabled">
+    <h2>🎓 Обучение</h2>
+    <p>Курс на Stepik пока настраивается — ссылка появится здесь</p>
+  </div>
+  {% endif %}
+  <a class="tile" href="{{ url_for('wiki_list') }}">
+    <h2>📚 База знаний</h2>
+    <p>Скрипты, инструкции, FAQ — с поиском</p>
+  </a>
+</div>
+{% endblock %}

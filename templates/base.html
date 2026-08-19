@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Сандов Фитнес — база знаний{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{{ url_for('home') }}">Сандов Фитнес</a>
+  {% if session.get('ok') %}
+  <nav>
+    <a href="{{ url_for('home') }}">Главная</a>
+    <a href="{{ url_for('wiki_list') }}">База знаний</a>
+    <a href="{{ url_for('logout') }}">Выйти</a>
+  </nav>
+  {% endif %}
+</header>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>
