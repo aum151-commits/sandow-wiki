@@ -43,6 +43,17 @@ const quill = new Quill('#editor', {
 });
 if (startingHtml) { quill.clipboard.dangerouslyPasteHTML(startingHtml); }
 
+// Подсказки Quill по умолчанию на английском (placeholder внутри поля ввода
+// нельзя перебить через CSS content) — подменяем на русский, когда тултип появляется.
+new MutationObserver(() => {
+  const input = document.querySelector('.ql-tooltip input[type=text]');
+  const tooltip = document.querySelector('.ql-tooltip');
+  if (input && tooltip) {
+    const mode = tooltip.getAttribute('data-mode');
+    input.placeholder = mode === 'video' ? 'https://...' : 'https://...';
+  }
+}).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-mode'] });
+
 document.getElementById('audioBtn').addEventListener('click', () => {
   const url = prompt('Ссылка на аудиофайл (mp3/ogg/wav, например с Яндекс.Диска или VK):');
   if (!url) return;

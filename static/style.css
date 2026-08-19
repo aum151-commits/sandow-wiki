@@ -160,3 +160,13 @@ button:hover, .btn:hover { background: var(--accent-dark); }
 
 #editor { background: var(--card); min-height: 320px; border: 1px solid var(--border); border-radius: 0 0 8px 8px; }
 .ql-toolbar { border-radius: 8px 8px 0 0; }
+
+/* Русские подписи вместо английских в тултипах Quill (ссылка/видео) */
+.ql-snow .ql-tooltip::before { content: "Ссылка:"; }
+.ql-snow .ql-tooltip[data-mode=link]::before { content: "Ссылка:"; }
+.ql-snow .ql-tooltip[data-mode=video]::before { content: "Ссылка на видео (YouTube, VK):"; }
+.ql-snow .ql-tooltip.ql-editing a.ql-action::after { content: "Сохранить"; }
+.ql-snow .ql-tooltip a.ql-action::after { content: "Изменить"; }
+.ql-snow .ql-tooltip a.ql-remove::before { content: "Убрать"; }
+.ql-snow .ql-tooltip { padding: 8px 10px; white-space: normal; }
+.ql-snow .ql-tooltip input[type=text] { width: 220px; }
