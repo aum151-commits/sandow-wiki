@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Повторение — Сандов Фитнес{% endblock %}
+{% block content %}
+<h1>Повторение</h1>
+<p style="color:var(--muted)">Эти уроки вы уже проходили — самое время закрепить в памяти. Пройдите тест ещё раз.</p>
+<div class="card">
+  {% if lessons %}
+  <ul class="page-list">
+    {% for it in lessons %}
+    <li>
+      <a href="{{ url_for('course_view', slug=it.slug) }}">{{ it.course_order }}. {{ it.title }}</a>
+      {% if it.quiz %}<div class="meta">с тестом</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="color:var(--muted)">На сегодня повторять нечего — всё в порядке.</p>
+  {% endif %}
+</div>
+<p style="margin-top:16px"><a class="btn secondary" href="{{ url_for('course_list') }}">Ко всем урокам</a></p>
+{% endblock %}

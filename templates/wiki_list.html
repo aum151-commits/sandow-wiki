@@ -4,21 +4,31 @@
 <h1>База знаний</h1>
 <form class="search-row" method="get" action="{{ url_for('wiki_list') }}">
   <input type="text" name="q" value="{{ q }}" placeholder="Искать по названию и тексту...">
+  {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
   <button type="submit">Найти</button>
   <a class="btn secondary" href="{{ url_for('wiki_new_form') }}">+ Новая страница</a>
 </form>
+{% if all_tags %}
+<div style="margin-bottom:16px">
+  {% for t in all_tags %}
+  <a class="tag-chip {{ 'active' if t == active_tag }}"
+     href="{{ url_for('wiki_list', tag=(t if t != active_tag else None), q=q) }}">{{ t }}</a>
+  {% endfor %}
+</div>
+{% endif %}
 <div class="card">
   {% if items %}
   <ul class="page-list">
     {% for it in items %}
     <li>
       <a href="{{ url_for('wiki_view', slug=it.slug) }}">{{ it.title }}</a>
+      {% for t in (it.tags or []) %}<span class="lesson-flag" style="background:transparent; border:1px solid var(--border); color:var(--muted)">{{ t }}</span>{% endfor %}
       <div class="meta">Обновлено {{ it.updated_at[:10] }} · {{ it.updated_by }}</div>
     </li>
     {% endfor %}
   </ul>
   {% else %}
-  <p style="color:var(--muted)">{% if q %}Ничего не нашлось по запросу «{{ q }}».{% else %}Страниц пока нет — добавьте первую.{% endif %}</p>
+  <p style="color:var(--muted)">{% if q or active_tag %}Ничего не нашлось.{% else %}Страниц пока нет — добавьте первую.{% endif %}</p>
   {% endif %}
 </div>
 {% endblock %}

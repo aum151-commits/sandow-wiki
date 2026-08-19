@@ -175,6 +175,22 @@ button:hover, .btn:hover { background: var(--accent-dark); }
 .badge-done { background: #e3f3e6; color: #1e6b2e; padding: 8px 14px; border-radius: 8px; font-weight: 600; }
 @media (prefers-color-scheme: dark) { .badge-done { background: #17301c; color: #7fd08f; } }
 
+.progress-bar { background: var(--border); border-radius: 999px; height: 10px; overflow: hidden; margin-top: 10px; }
+.progress-fill { background: var(--accent); height: 100%; border-radius: 999px; transition: width .3s ease; }
+
+.tag-chip { display: inline-block; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); font-size: .82rem; color: var(--muted); text-decoration: none; margin: 0 6px 6px 0; }
+.tag-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.lesson-flag { font-size: .8rem; padding: 2px 8px; border-radius: 999px; margin-left: 8px; }
+.lesson-flag.due { background: #fff3cd; color: #8a6d00; }
+.lesson-flag.overdue { background: #fbeaea; color: #a33; }
+@media (prefers-color-scheme: dark) {
+  .lesson-flag.due { background: #3a3210; color: #e0c25a; }
+  .lesson-flag.overdue { background: #331a1a; color: #e39c9c; }
+}
+
+.buddy-weeks label { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-weight: 400; font-size: .85rem; }
+
 #editor { background: var(--card); min-height: 320px; border: 1px solid var(--border); border-radius: 0 0 8px 8px; }
 .ql-toolbar { border-radius: 8px 8px 0 0; }
 

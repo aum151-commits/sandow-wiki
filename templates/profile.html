@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Профиль — Сандов Фитнес{% endblock %}
+{% block content %}
+<h1>{{ account.display_name }}</h1>
+<p style="color:var(--muted)">Логин: {{ current_user }} · {{ "администратор" if account.role == "admin" else "сотрудник" }}</p>
+
+<div class="card">
+  <h2>Допуск к звонкам</h2>
+  <p style="color:var(--muted); font-size:.9rem">
+    Считается по двум условиям: курс в «Обучении» пройден полностью ({{ "✅ да" if course_done else "❌ ещё нет" }})
+    и балл в голосовом тренажёре — не ниже {{ threshold }}%.
+  </p>
+
+  <div class="field">
+    <label for="trainer_name">Как вас зовут в голосовом тренажёре</label>
+    <p style="color:var(--muted); font-size:.85rem; margin:0 0 8px">
+      Введите имя ровно так, как вводите его при старте тренировки — по нему подтягивается балл.
+    </p>
+    <form method="post" action="{{ url_for('profile_set_trainer_name') }}" style="display:flex; gap:10px">
+      <input type="text" id="trainer_name" name="trainer_name" value="{{ account.trainer_name or '' }}" style="flex:1">
+      <button type="submit">Сохранить</button>
+    </form>
+  </div>
+
+  {% if account.cert_status %}
+  <div class="quiz-banner {{ 'pass' if account.cert_status.passed else 'fail' }}" style="margin-top:16px">
+    {% if account.cert_status.error %}
+      Не удалось получить данные тренажёра — попробуйте проверить ещё раз чуть позже.
+    {% elif account.cert_status.passed %}
+      ✅ Допущен(а) к звонкам. Балл тренажёра: {{ account.cert_status.score }}% ({{ account.cert_status.sessions }} попыток).
+    {% else %}
+      ❌ Пока не допущен(а). Балл тренажёра: {{ account.cert_status.score if account.cert_status.score is not none else "нет данных" }}{% if account.cert_status.score is not none %}%{% endif %}.
+    {% endif %}
+    <div class="meta">проверено {{ account.cert_status.checked_at[:16].replace('T',' ') }}</div>
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('profile_check_certification') }}" style="margin-top:14px">
+    <button type="submit" class="btn secondary">Проверить допуск</button>
+  </form>
+  <p style="color:var(--muted); font-size:.8rem; margin-top:8px">
+    Тренажёр на бесплатном сервере — если «спал», первая проверка может занять до минуты.
+  </p>
+</div>
+{% endblock %}

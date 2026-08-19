@@ -7,23 +7,40 @@
   {% if rows %}
   <ul class="page-list">
     {% for u in rows %}
-    <li style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
-      <div>
-        <a href="#">{{ u.display_name }}</a>
-        <div class="meta">
-          {{ u.username }} · {{ "администратор" if u.role == "admin" else "сотрудник" }}
-          · {{ "активен" if u.get("active", True) else "доступ отключён" }}
+    {% set buddy = u.get("buddy", {}) %}
+    <li>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+        <div>
+          {{ u.display_name }}
+          <div class="meta">
+            {{ u.username }} · {{ "администратор" if u.role == "admin" else "сотрудник" }}
+            · {{ "активен" if u.get("active", True) else "доступ отключён" }}
+            {% if u.get("cert_status", {}).get("passed") %} · допущен к звонкам{% endif %}
+          </div>
         </div>
+        {% if u.username != current_user %}
+        <form method="post" action="{{ url_for('admin_toggle_user', username=u.username) }}" style="margin:0">
+          <button type="submit" class="btn secondary">
+            {{ "Отключить доступ" if u.get("active", True) else "Включить доступ" }}
+          </button>
+        </form>
+        {% else %}
+        <span class="meta">это вы</span>
+        {% endif %}
       </div>
-      {% if u.username != current_user %}
-      <form method="post" action="{{ url_for('admin_toggle_user', username=u.username) }}" style="margin:0">
-        <button type="submit" class="btn secondary">
-          {{ "Отключить доступ" if u.get("active", True) else "Включить доступ" }}
-        </button>
+
+      <form method="post" action="{{ url_for('admin_set_buddy', username=u.username) }}" style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border)">
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+          <label style="font-weight:400; font-size:.85rem; color:var(--muted)">Наставник:</label>
+          <input type="text" name="mentor" value="{{ buddy.get('mentor', '') }}" placeholder="имя наставника" style="max-width:220px">
+          <div class="buddy-weeks">
+            {% for i in range(1, 5) %}
+            <label><input type="checkbox" name="week{{ i }}" {% if buddy.get('weeks', [False,False,False,False])[i-1] %}checked{% endif %}> нед. {{ i }}</label>
+            {% endfor %}
+          </div>
+          <button type="submit" class="btn secondary">Сохранить</button>
+        </div>
       </form>
-      {% else %}
-      <span class="meta">это вы</span>
-      {% endif %}
     </li>
     {% endfor %}
   </ul>

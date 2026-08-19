@@ -2,8 +2,9 @@
 {% block title %}{{ page.title }} — Сандов Фитнес{% endblock %}
 {% block content %}
 <div class="card">
-  <p class="meta" style="color:var(--muted)">Урок {{ page.course_order }} · обновлено {{ page.updated_at[:10] }}</p>
+  <p class="meta" style="color:var(--muted)">Урок {{ page.course_order }}{% if page.plan_day %} · по плану — день {{ page.plan_day }}{% endif %} · обновлено {{ page.updated_at[:10] }}</p>
   <h1>{{ page.title }}</h1>
+  {% if due %}<div class="quiz-banner fail">⏰ Этот урок пора повторить — пройдите тест ещё раз, чтобы закрепить.</div>{% endif %}
   <div class="content-html">{{ page.html | safe }}</div>
 
   {% if quiz %}
@@ -42,7 +43,7 @@
 
   {% elif done %}
   <div class="view-actions">
-    <span class="badge-done">✅ Пройдено{% if entry and entry.completed_at %} {{ entry.completed_at[:10] }}{% endif %}</span>
+    <span class="badge-done">✅ Пройдено{% if entry and entry.completed_at %} {{ entry.completed_at[:10] }}{% endif %}{% if entry and entry.next_review %} · повтор {{ entry.next_review }}{% endif %}</span>
     <form method="post" action="{{ url_for('course_complete', slug=slug) }}" style="margin:0">
       <input type="hidden" name="undo" value="1">
       <button type="submit" class="btn secondary">Снять отметку</button>

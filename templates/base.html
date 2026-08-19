@@ -15,6 +15,7 @@
     <a href="{{ url_for('home') }}">Главная</a>
     <a href="{{ url_for('course_list') }}">Обучение</a>
     <a href="{{ url_for('wiki_list') }}">База знаний</a>
+    <a href="{{ url_for('profile') }}">Профиль</a>
     {% if current_user_is_admin %}<a href="{{ url_for('admin_users') }}">Сотрудники</a>{% endif %}
     <a href="{{ url_for('logout') }}">Выйти</a>
   </nav>
