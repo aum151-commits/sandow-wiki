@@ -88,7 +88,11 @@ def is_admin(username) -> bool:
 
 @app.context_processor
 def inject_user():
-    return {"current_user": session.get("user"), "current_user_is_admin": is_admin(session.get("user"))}
+    return {
+        "current_user": session.get("user"),
+        "current_user_name": display_name(session.get("user")),
+        "current_user_is_admin": is_admin(session.get("user")),
+    }
 
 
 # ---------- простой формат теста: "- вариант *" — правильный ----------

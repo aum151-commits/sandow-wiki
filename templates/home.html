@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Сандов Фитнес — старт{% endblock %}
 {% block content %}
-<h1>Добро пожаловать{% if current_user %}, {{ current_user }}{% endif %}</h1>
+<h1>Добро пожаловать{% if current_user %}, {{ current_user_name }}{% endif %}</h1>
 <p style="color:var(--muted)">
   День {{ day_n }} · {% if streak %}🔥 {{ streak }} {{ "день" if streak == 1 else "дня" if streak < 5 else "дней" }} подряд{% else %}начните заниматься сегодня{% endif %}
 </p>
