@@ -2,6 +2,7 @@
 {% block title %}Вход — Сандов Фитнес{% endblock %}
 {% block content %}
 <div class="login-wrap">
+  <span class="eyebrow" style="text-align:center">Отдел продаж</span>
   <h1>Сандов Фитнес</h1>
   <p style="color:var(--muted)">Обучение и база знаний</p>
   <div class="card">
@@ -14,9 +15,9 @@
       <div class="field">
         <label for="password">Пароль</label>
         <div class="password-row">
-          <input type="password" id="password" name="password" required
-            autocapitalize="off" autocorrect="off" spellcheck="false">
-          <button type="button" class="btn secondary" id="togglePassword">Показать</button>
+          <input type="text" id="password" name="password" required
+            autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="current-password">
+          <button type="button" class="btn secondary" id="togglePassword">Скрыть</button>
         </div>
       </div>
       <button type="submit">Войти</button>
