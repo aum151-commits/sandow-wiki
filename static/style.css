@@ -156,6 +156,20 @@ button:hover, .btn:hover { background: var(--accent-dark); }
 .content-html img, .content-html iframe { max-width: 100%; }
 .content-html iframe { aspect-ratio: 16/9; height: auto; border: none; border-radius: 8px; }
 .content-html audio { width: 100%; }
+.content-html h2 { margin-top: 28px; }
+.content-html h3 { margin-top: 20px; color: var(--accent-dark); }
+.content-html ul, .content-html ol { padding-left: 22px; }
+.content-html li { margin-bottom: 4px; }
+.content-html { overflow-x: auto; }
+.content-html table { border-collapse: collapse; margin: 14px 0; font-size: .95rem; min-width: 100%; }
+.content-html th, .content-html td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.content-html th { background: var(--bg); font-weight: 700; }
+.content-html td p, .content-html th p { margin: 0; }
 
 .field { margin-bottom: 16px; }
 .field label { display: block; margin-bottom: 6px; font-weight: 600; font-size: .9rem; }

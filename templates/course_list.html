@@ -4,10 +4,12 @@
 <h1>Обучение</h1>
 <p style="color:var(--muted)">День {{ day_n }} с начала обучения</p>
 <p><a href="{{ url_for('course_progress_overview') }}">Прогресс всей команды →</a></p>
+
+{% for m in modules %}
+<h2 style="margin-top:28px">{{ m.name or "Без модуля" }}</h2>
 <div class="card">
-  {% if lessons %}
   <ul class="page-list">
-    {% for it in lessons %}
+    {% for it in m.lessons %}
     <li>
       <a href="{{ url_for('course_view', slug=it.slug) }}">
         {{ it.done and "✅" or "▫️" }} {{ it.course_order }}. {{ it.title }}
@@ -18,9 +20,10 @@
     </li>
     {% endfor %}
   </ul>
-  {% else %}
-  <p style="color:var(--muted)">Уроков пока нет.</p>
-  {% endif %}
 </div>
+{% else %}
+<div class="card"><p style="color:var(--muted)">Уроков пока нет.</p></div>
+{% endfor %}
+
 {% if current_user_is_admin %}<p style="margin-top:16px"><a class="btn secondary" href="{{ url_for('wiki_new_form') }}">+ Добавить урок</a></p>{% endif %}
 {% endblock %}

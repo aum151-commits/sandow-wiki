@@ -30,9 +30,10 @@ REVIEW_INTERVALS = [1, 3, 7, 30]  # дни до следующего повто�
 CERT_SCORE_THRESHOLD = float(os.environ.get("CERT_SCORE_THRESHOLD", "0.7"))
 
 ALLOWED_TAGS = [
-    "p", "br", "strong", "em", "u", "s", "span", "div",
+    "p", "br", "strong", "em", "u", "s", "span",
     "h1", "h2", "h3", "ul", "ol", "li", "a", "img",
     "blockquote", "pre", "code", "iframe", "audio", "source", "hr",
+    "table", "thead", "tbody", "tr", "th", "td",
 ]
 ALLOWED_ATTRS = {
     "*": ["class", "style"],
@@ -40,6 +41,8 @@ ALLOWED_ATTRS = {
     "img": ["src", "alt"],
     "iframe": ["src", "width", "height", "frameborder", "allow", "allowfullscreen"],
     "audio": ["controls", "src"],
+    "td": ["colspan", "rowspan"],
+    "th": ["colspan", "rowspan"],
     "source": ["src", "type"],
 }
 ALLOWED_PROTOCOLS = ["http", "https"]
@@ -408,7 +411,17 @@ def course_list():
         if meta.get("course_order") is not None
     ]
     lessons.sort(key=lambda it: it["course_order"])
-    return render_template("course_list.html", lessons=lessons, day_n=day_n)
+
+    modules = []
+    seen = {}
+    for lesson in lessons:
+        key = lesson.get("module") or ""
+        if key not in seen:
+            seen[key] = {"name": lesson.get("module"), "lessons": []}
+            modules.append(seen[key])
+        seen[key]["lessons"].append(lesson)
+
+    return render_template("course_list.html", modules=modules, day_n=day_n)
 
 
 @app.get("/course/review")
@@ -598,6 +611,7 @@ def wiki_new():
     html = sanitize(request.form.get("html", ""))
     quiz = parse_quiz(request.form.get("quiz_text", ""))
     plan_day = request.form.get("plan_day", "").strip()
+    module = request.form.get("module", "").strip()
     tags = [t.strip() for t in request.form.get("tags", "").split(",") if t.strip()]
     pages = github_store.pages_store.load()
     slug = new_slug()
@@ -608,6 +622,7 @@ def wiki_new():
         "html": html,
         "course_order": int(course_order) if course_order else None,
         "plan_day": int(plan_day) if plan_day else None,
+        "module": module or None,
         "quiz": quiz,
         "tags": tags,
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -660,12 +675,14 @@ def wiki_edit(slug):
     html = sanitize(request.form.get("html", ""))
     quiz = parse_quiz(request.form.get("quiz_text", ""))
     plan_day = request.form.get("plan_day", "").strip()
+    module = request.form.get("module", "").strip()
     tags = [t.strip() for t in request.form.get("tags", "").split(",") if t.strip()]
     pages[slug] = {
         "title": title,
         "html": html,
         "course_order": int(course_order) if course_order else None,
         "plan_day": int(plan_day) if plan_day else None,
+        "module": module or None,
         "quiz": quiz,
         "tags": tags,
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

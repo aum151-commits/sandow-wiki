@@ -18,6 +18,11 @@
         value="{{ page.course_order if page and page.course_order is not none else '' }}">
     </div>
     <div>
+      <label for="module">Модуль (необязательно)</label>
+      <input type="text" id="module" name="module" style="max-width:260px" placeholder="например: Модуль 1. Компания, продукты и цены"
+        value="{{ page.module if page and page.module else '' }}">
+    </div>
+    <div>
       <label for="plan_day">День по плану онбординга (необязательно)</label>
       <input type="number" id="plan_day" name="plan_day" min="1" style="max-width:140px"
         value="{{ page.plan_day if page and page.plan_day is not none else '' }}">
