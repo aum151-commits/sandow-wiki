@@ -1,34 +1,21 @@
 /* Палитра и шрифты — паспорт стиля D:\Проекты\дизайн-шаблоны\ДИЗАЙН-ПАСПОРТ.md.
-   Светлая инверсия (слоновая кость + тёмный текст) — как основной режим:
-   это учебный текст, который читают подолгу, а не промо-баннер. Паспорт
-   явно разрешает инверсию, золото/бронза остаются акцентами в обеих. */
+   Тёмная версия зафиксирована как единственная (не зависит от системной
+   темы устройства) — Ольга прямо сказала, что светлая инверсия читалась
+   как «блёклая» и не похожа на сайт. Тёмный фон + золото — это и есть
+   sandowfitness.ru, здесь без компромиссов ради «удобства чтения». */
 :root {
-  --bg: #F0EADE;
-  --card: #FBF8F2;
-  --text: #0B0906;
-  --muted: #6B6152;
-  --accent: #C08B4E;
-  --accent-dark: #96652F;
+  --bg: #0B0906;
+  --card: #241A0B;
+  --text: #F0EADE;
+  --muted: #9A8F7C;
+  --accent: #E9C77E;
+  --accent-dark: #F3DCA6;
   --gold: #E9C77E;
   --gold-ink: #0B0906;
-  --border: rgba(11, 9, 6, .13);
+  --border: rgba(240, 234, 222, .16);
   --font-heading: 'Unbounded', -apple-system, "Segoe UI", sans-serif;
   --font-body: 'Archivo', -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, "SFMono-Regular", Menlo, monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0B0906;
-    --card: #241A0B;
-    --text: #F0EADE;
-    --muted: #9A8F7C;
-    --accent: #E9C77E;
-    --accent-dark: #F3DCA6;
-    --gold: #E9C77E;
-    --gold-ink: #0B0906;
-    --border: rgba(240, 234, 222, .13);
-  }
 }
 
 * { box-sizing: border-box; }
@@ -55,11 +42,15 @@ h1, h2, h3, .brand { font-family: var(--font-heading); letter-spacing: -0.01em; 
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 600;
   font-size: 1.1rem;
   color: var(--text);
   text-decoration: none;
 }
+.brand img { display: block; }
 
 .topbar nav a {
   margin-left: 16px;
@@ -203,19 +194,14 @@ button:hover, .btn:hover { background: var(--accent-dark); color: var(--gold-ink
 .field label { display: block; margin-bottom: 6px; font-weight: 600; font-size: .9rem; }
 
 .quiz-banner { padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-weight: 600; }
-.quiz-banner.pass { background: #e3f3e6; color: #1e6b2e; }
-.quiz-banner.fail { background: #fbeaea; color: #a33; }
-@media (prefers-color-scheme: dark) {
-  .quiz-banner.pass { background: #17301c; color: #7fd08f; }
-  .quiz-banner.fail { background: #331a1a; color: #e39c9c; }
-}
+.quiz-banner.pass { background: #17301c; color: #7fd08f; }
+.quiz-banner.fail { background: #331a1a; color: #e39c9c; }
 .quiz-q label:first-child { font-weight: 600; }
 .quiz-opt { display: flex; align-items: center; gap: 8px; font-weight: 400 !important; padding: 6px 0; cursor: pointer; }
 .quiz-opt input { width: auto; }
-.quiz-correct { color: #1e6b2e; font-weight: 600 !important; }
-.quiz-wrong { color: #a33; text-decoration: line-through; }
-.badge-done { background: #e3f3e6; color: #1e6b2e; padding: 8px 14px; border-radius: 999px; font-weight: 600; }
-@media (prefers-color-scheme: dark) { .badge-done { background: #17301c; color: #7fd08f; } }
+.quiz-correct { color: #7fd08f; font-weight: 600 !important; }
+.quiz-wrong { color: #e39c9c; text-decoration: line-through; }
+.badge-done { background: #17301c; color: #7fd08f; padding: 8px 14px; border-radius: 999px; font-weight: 600; }
 
 .progress-bar { background: var(--border); border-radius: 999px; height: 10px; overflow: hidden; margin-top: 10px; }
 .progress-fill { background: var(--gold); height: 100%; border-radius: 999px; transition: width .3s ease; }
@@ -228,12 +214,8 @@ button:hover, .btn:hover { background: var(--accent-dark); color: var(--gold-ink
 .tag-chip.active { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
 
 .lesson-flag { font-size: .74rem; padding: 3px 10px; border-radius: 999px; margin-left: 8px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
-.lesson-flag.due { background: #fff3cd; color: #8a6d00; }
-.lesson-flag.overdue { background: #fbeaea; color: #a33; }
-@media (prefers-color-scheme: dark) {
-  .lesson-flag.due { background: #3a3210; color: #e0c25a; }
-  .lesson-flag.overdue { background: #331a1a; color: #e39c9c; }
-}
+.lesson-flag.due { background: #3a3210; color: #e0c25a; }
+.lesson-flag.overdue { background: #331a1a; color: #e39c9c; }
 
 .eyebrow {
   display: block; font-family: var(--font-mono); text-transform: uppercase;
