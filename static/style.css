@@ -213,7 +213,7 @@ button:hover, .btn:hover { background: var(--accent-dark); color: var(--gold-ink
 }
 .tag-chip.active { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
 
-.lesson-flag { font-size: .74rem; padding: 3px 10px; border-radius: 999px; margin-left: 8px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
+.lesson-flag { display: inline-block; white-space: nowrap; font-size: .74rem; padding: 3px 10px; border-radius: 999px; margin-left: 8px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
 .lesson-flag.due { background: #3a3210; color: #e0c25a; }
 .lesson-flag.overdue { background: #331a1a; color: #e39c9c; }
 
