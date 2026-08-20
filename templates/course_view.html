@@ -7,11 +7,9 @@
   {% if due %}<div class="quiz-banner fail">⏰ Этот урок пора повторить — пройдите тест ещё раз, чтобы закрепить.</div>{% endif %}
   <div class="content-html">{{ page.html | safe }}</div>
 
-  {% if quiz %}
+  {% if quiz_result %}
   <hr style="margin:28px 0; border-color:var(--border)">
   <h2>Проверьте себя</h2>
-
-  {% if quiz_result %}
   <div class="quiz-banner {{ 'pass' if quiz_result.passed else 'fail' }}">
     {% if quiz_result.passed %}
       ✅ Тест сдан: {{ quiz_result.correct }} из {{ quiz_result.total }} верно. Урок засчитан.
@@ -19,26 +17,37 @@
       ❌ {{ quiz_result.correct }} из {{ quiz_result.total }} верно — для зачёта нужны все ответы. Попробуйте ещё раз.
     {% endif %}
   </div>
-  {% endif %}
+  {% for r in quiz_result.results %}
+  <div class="field quiz-q">
+    <label>{{ loop.index }}. {{ r.question }}</label>
+    {% for opt in r.options %}
+    <div class="quiz-opt {% if opt in r.correct_texts %}quiz-correct{% elif opt in r.picked_texts %}quiz-wrong{% endif %}">
+      {{ "☑" if opt in r.picked_texts else "☐" }} {{ opt }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+  <a class="btn" href="{{ url_for('course_view', slug=slug) }}">Пройти ещё раз (другие вопросы)</a>
 
+  {% elif quiz %}
+  <hr style="margin:28px 0; border-color:var(--border)">
+  <h2>Проверьте себя</h2>
+  <p style="color:var(--muted); font-size:.85rem">Вопросы выбираются случайно из банка — при следующей попытке будут другие.</p>
   <form method="post" action="{{ url_for('course_quiz_submit', slug=slug) }}">
     {% for q in quiz %}
+    {% set qi = loop.index0 %}
     <div class="field quiz-q">
       <label>{{ loop.index }}. {{ q.question }}</label>
-      {% set qi = loop.index0 %}
+      <input type="hidden" name="qid{{ qi }}" value="{{ q.pool_index }}">
       {% for opt in q.options %}
-      <label class="quiz-opt {% if quiz_result %}
-        {% if loop.index0 in quiz_result.results[qi].correct %}quiz-correct
-        {% elif loop.index0 in quiz_result.results[qi].picked %}quiz-wrong{% endif %}
-      {% endif %}">
-        <input type="checkbox" name="q{{ qi }}" value="{{ loop.index0 }}"
-          {% if quiz_result and loop.index0 in quiz_result.results[qi].picked %}checked{% endif %}>
+      <label class="quiz-opt">
+        <input type="checkbox" name="q{{ qi }}" value="{{ opt }}">
         {{ opt }}
       </label>
       {% endfor %}
     </div>
     {% endfor %}
-    <button type="submit">{{ "Пройти ещё раз" if quiz_result else "Проверить ответы" }}</button>
+    <button type="submit">Проверить ответы</button>
   </form>
 
   {% elif done %}

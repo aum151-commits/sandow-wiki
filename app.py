@@ -6,6 +6,7 @@
 """
 
 import os
+import random
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
@@ -27,6 +28,7 @@ INVITE_CODE = os.environ["INVITE_CODE"]
 ADMIN_INVITE_CODE = os.environ["ADMIN_INVITE_CODE"]
 
 REVIEW_INTERVALS = [1, 3, 7, 30]  # дни до следующего повторения теста
+QUIZ_DRAW_SIZE = 6  # сколько вопросов брать из банка на одну попытку
 CERT_SCORE_THRESHOLD = float(os.environ.get("CERT_SCORE_THRESHOLD", "0.7"))
 
 ALLOWED_TAGS = [
@@ -192,6 +194,24 @@ def quiz_to_text(quiz) -> str:
             lines.append(f"- {opt}{mark}")
         lines.append("")
     return "\n".join(lines).strip()
+
+
+def draw_quiz(pool):
+    """Банк вопросов -> случайная выборка на одну попытку, варианты ответа
+    перемешаны. Каждый вопрос несёт pool_index — на нём же строится
+    проверка ответа (сверяем ТЕКСТ выбранных вариантов с пулом, а не
+    позицию, поэтому перемешивание не ломает проверку)."""
+    if not pool:
+        return []
+    size = min(QUIZ_DRAW_SIZE, len(pool))
+    indices = random.sample(range(len(pool)), size)
+    drawn = []
+    for i in indices:
+        q = pool[i]
+        options = list(q["options"])
+        random.shuffle(options)
+        drawn.append({"pool_index": i, "question": q["question"], "options": options})
+    return drawn
 
 
 @app.get("/health")
@@ -456,8 +476,8 @@ def course_view(slug):
     prev_lesson = lessons[idx - 1] if idx > 0 else None
     next_lesson = lessons[idx + 1] if idx + 1 < len(lessons) else None
     progress = github_store.progress_store.load().get(session["user"], {})
-    quiz = page.get("quiz")
-    quiz_for_view = [{"question": q["question"], "options": q["options"]} for q in quiz] if quiz else None
+    pool = page.get("quiz")
+    quiz_for_view = draw_quiz(pool) if pool else None
     is_due = slug in due_for_review(pages, progress)
     return render_template(
         "course_view.html", page=page, slug=slug,
@@ -495,21 +515,28 @@ def course_quiz_submit(slug):
         return guard
     pages = github_store.pages_store.load()
     page = pages.get(slug)
-    quiz = page.get("quiz") if page else None
-    if not page or page.get("course_order") is None or not quiz:
+    pool = page.get("quiz") if page else None
+    if not page or page.get("course_order") is None or not pool:
         abort(404)
 
-    total = len(quiz)
-    correct_count = 0
+    # Проверка по ТЕКСТУ выбранных вариантов, не по позиции — варианты
+    # перемешаны при показе (draw_quiz), позиция от попытки к попытке разная.
     results = []
-    for i, q in enumerate(quiz):
-        picked = {int(v) for v in request.form.getlist(f"q{i}")}
-        is_correct = picked == set(q["correct"])
-        correct_count += int(is_correct)
+    i = 0
+    while f"qid{i}" in request.form:
+        pool_index = int(request.form[f"qid{i}"])
+        q = pool[pool_index]
+        picked_texts = set(request.form.getlist(f"q{i}"))
+        correct_texts = {q["options"][c] for c in q["correct"]}
+        is_correct = picked_texts == correct_texts
         results.append({"question": q["question"], "options": q["options"],
-                         "correct": q["correct"], "picked": picked, "is_correct": is_correct})
+                         "correct_texts": correct_texts, "picked_texts": picked_texts,
+                         "is_correct": is_correct})
+        i += 1
 
-    passed = correct_count == total
+    total = len(results)
+    correct_count = sum(1 for r in results if r["is_correct"])
+    passed = total > 0 and correct_count == total
     if passed:
         progress = github_store.progress_store.load()
         user_progress = progress.setdefault(session["user"], {})
@@ -530,7 +557,7 @@ def course_quiz_submit(slug):
         prev_lesson=prev_lesson, next_lesson=next_lesson,
         done=slug in progress_now, entry=progress_now.get(slug), due=False,
         quiz_result={"passed": passed, "correct": correct_count, "total": total, "results": results},
-        quiz=[{"question": q["question"], "options": q["options"]} for q in quiz],
+        quiz=None,
     )
 
 
