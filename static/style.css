@@ -151,6 +151,9 @@ button:hover, .btn:hover { background: var(--accent-dark); }
 }
 .login-wrap .card { text-align: left; }
 .error { color: #c0392b; margin-bottom: 12px; }
+.password-row { display: flex; gap: 8px; }
+.password-row input { flex: 1; min-width: 0; }
+.password-row button { white-space: nowrap; }
 
 .view-actions { margin-top: 24px; display: flex; gap: 10px; }
 .content-html img, .content-html iframe { max-width: 100%; }

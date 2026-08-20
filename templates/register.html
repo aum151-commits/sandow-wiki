@@ -17,15 +17,28 @@
       </div>
       <div class="field">
         <label for="password">Пароль</label>
-        <input type="password" id="password" name="password" required minlength="6">
+        <div class="password-row">
+          <input type="password" id="password" name="password" required minlength="6"
+            autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button type="button" class="btn secondary" id="togglePassword">Показать</button>
+        </div>
       </div>
       <div class="field">
         <label for="invite">Код приглашения</label>
-        <input type="text" id="invite" name="invite" placeholder="выдаётся администратором клуба" required>
+        <input type="text" id="invite" name="invite" placeholder="выдаётся администратором клуба" required
+          autocapitalize="off" autocorrect="off" spellcheck="false">
       </div>
       <button type="submit">Зарегистрироваться</button>
     </form>
   </div>
   <p style="margin-top:14px"><a href="{{ url_for('login') }}">Уже есть аккаунт — войти</a></p>
 </div>
+<script>
+document.getElementById('togglePassword').addEventListener('click', function () {
+  const f = document.getElementById('password');
+  const show = f.type === 'password';
+  f.type = show ? 'text' : 'password';
+  this.textContent = show ? 'Скрыть' : 'Показать';
+});
+</script>
 {% endblock %}

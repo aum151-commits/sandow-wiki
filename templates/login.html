@@ -13,11 +13,23 @@
       </div>
       <div class="field">
         <label for="password">Пароль</label>
-        <input type="password" id="password" name="password" required>
+        <div class="password-row">
+          <input type="password" id="password" name="password" required
+            autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button type="button" class="btn secondary" id="togglePassword">Показать</button>
+        </div>
       </div>
       <button type="submit">Войти</button>
     </form>
   </div>
   <p style="margin-top:14px"><a href="{{ url_for('register') }}">Нет аккаунта — зарегистрироваться</a></p>
 </div>
+<script>
+document.getElementById('togglePassword').addEventListener('click', function () {
+  const f = document.getElementById('password');
+  const show = f.type === 'password';
+  f.type = show ? 'text' : 'password';
+  this.textContent = show ? 'Скрыть' : 'Показать';
+});
+</script>
 {% endblock %}
