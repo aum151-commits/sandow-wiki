@@ -11,6 +11,9 @@
 </script>
 <title>{% block title %}Сандов Фитнес{% endblock %}</title>
 <link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+<meta name="theme-color" content="#0B0906">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -23,9 +26,10 @@
     <img src="{{ url_for('static', filename='logo.png') }}" alt="" width="28" height="28">
     Сандов Фитнес
   </a>
-  <div style="display:flex; align-items:center; flex-wrap:wrap">
+  <div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px">
     {% if current_user %}
-    <nav>
+    <button type="button" class="nav-toggle" id="navToggle" aria-label="Меню">☰</button>
+    <nav id="mainNav">
       <a href="{{ url_for('home') }}">Главная</a>
       <a href="{{ url_for('course_list') }}">Обучение</a>
       <a href="{{ url_for('wiki_list') }}">База знаний</a>
@@ -42,6 +46,15 @@
 {% block content %}{% endblock %}
 </main>
 <script>
+(function () {
+  var navToggle = document.getElementById('navToggle');
+  var nav = document.getElementById('mainNav');
+  if (navToggle && nav) {
+    navToggle.addEventListener('click', function () {
+      nav.classList.toggle('open');
+    });
+  }
+})();
 (function () {
   var btn = document.getElementById('themeToggle');
   function label() {

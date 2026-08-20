@@ -71,6 +71,7 @@
       {% if prev_lesson %}<a class="btn secondary" href="{{ url_for('course_view', slug=prev_lesson.slug) }}">← {{ prev_lesson.title }}</a>{% endif %}
       {% if next_lesson %}<a class="btn" href="{{ url_for('course_view', slug=next_lesson.slug) }}">{{ next_lesson.title }} →</a>{% endif %}
     </div>
+    <a class="btn secondary" href="{{ url_for('page_history', slug=slug) }}">История правок</a>
     {% if current_user_is_admin %}
     <a class="btn secondary" href="{{ url_for('wiki_edit_form', slug=slug) }}">Редактировать</a>
     <form method="post" action="{{ url_for('wiki_delete', slug=slug) }}" onsubmit="return confirm('Удалить урок «{{ page.title }}»?');" style="margin:0">

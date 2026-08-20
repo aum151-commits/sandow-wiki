@@ -69,6 +69,32 @@ class JsonFileStore:
         return data
 
 
+def history(path: str, contains: str = None, limit: int = 15):
+    """Список последних коммитов, затронувших файл — грубая, но бесплатная
+    история правок: своей версии diff/rollback не пишем, git уже это умеет.
+    contains — фильтр по подстроке в сообщении коммита (например, названию
+    страницы), т.к. все страницы живут в одном общем JSON-файле."""
+    r = requests.get(
+        f"https://api.github.com/repos/{REPO}/commits",
+        headers=HEAD, params={"path": path, "per_page": 100}, timeout=30,
+    )
+    r.raise_for_status()
+    commits = r.json()
+    out = []
+    for c in commits:
+        msg = c["commit"]["message"]
+        if contains and contains not in msg:
+            continue
+        out.append({
+            "message": msg,
+            "date": c["commit"]["author"]["date"],
+            "author": c["commit"]["author"]["name"],
+        })
+        if len(out) >= limit:
+            break
+    return out
+
+
 WIKI_PATH = os.environ.get("WIKI_PATH", "wiki-content/pages.json")
 USERS_PATH = os.environ.get("WIKI_USERS_PATH", "wiki-content/users.json")
 PROGRESS_PATH = os.environ.get("WIKI_PROGRESS_PATH", "wiki-content/progress.json")

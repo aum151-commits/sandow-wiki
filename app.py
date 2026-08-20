@@ -7,6 +7,7 @@
 
 import os
 import random
+import secrets
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
@@ -296,7 +297,8 @@ def admin_users():
         [{"username": u, **a} for u, a in users.items()],
         key=lambda a: a.get("display_name", a["username"]).lower(),
     )
-    return render_template("admin_users.html", rows=rows)
+    last_reset = session.pop("last_reset", None)
+    return render_template("admin_users.html", rows=rows, last_reset=last_reset)
 
 
 @app.post("/admin/users/<username>/toggle")
@@ -312,6 +314,21 @@ def admin_toggle_user(username):
     users[username]["active"] = not users[username].get("active", True)
     state = "включён" if users[username]["active"] else "отключён"
     github_store.users_store.save(users, f"админ: доступ «{username}» {state}")
+    return redirect(url_for("admin_users"))
+
+
+@app.post("/admin/users/<username>/reset_password")
+def admin_reset_password(username):
+    guard = require_admin()
+    if guard:
+        return guard
+    users = github_store.users_store.load()
+    if username not in users:
+        abort(404)
+    new_password = secrets.token_urlsafe(6)  # ~8 читаемых символов
+    users[username]["password_hash"] = generate_password_hash(new_password)
+    github_store.users_store.save(users, f"админ: сброшен пароль «{username}»")
+    session["last_reset"] = {"username": username, "password": new_password}
     return redirect(url_for("admin_users"))
 
 
@@ -612,13 +629,27 @@ def wiki_list():
     all_tags = sorted({t for it in items for t in (it.get("tags") or [])})
     if tag:
         items = [it for it in items if tag in (it.get("tags") or [])]
+    lesson_matches = []
     if q:
         items = [
             it for it in items
             if q in it["title"].lower() or q in plain_text(it["html"]).lower()
         ]
+        # поиск заодно захватывает уроки обучения — команда не должна
+        # заглядывать в два разных места, чтобы найти нужный факт
+        lesson_matches = [
+            {"slug": slug, **meta}
+            for slug, meta in pages.items()
+            if meta.get("course_order") is not None
+            and (q in meta["title"].lower() or q in plain_text(meta["html"]).lower())
+        ]
+        lesson_matches.sort(key=lambda it: it["course_order"])
     items.sort(key=lambda it: it["title"].lower())
-    return render_template("wiki_list.html", items=items, q=request.args.get("q", ""), all_tags=all_tags, active_tag=tag)
+    today_iso = today().isoformat()
+    return render_template(
+        "wiki_list.html", items=items, lesson_matches=lesson_matches,
+        q=request.args.get("q", ""), all_tags=all_tags, active_tag=tag, today_iso=today_iso,
+    )
 
 
 @app.get("/wiki/new")
@@ -640,6 +671,7 @@ def wiki_new():
     quiz = parse_quiz(request.form.get("quiz_text", ""))
     plan_day = request.form.get("plan_day", "").strip()
     module = request.form.get("module", "").strip()
+    review_by = request.form.get("review_by", "").strip()
     tags = [t.strip() for t in request.form.get("tags", "").split(",") if t.strip()]
     pages = github_store.pages_store.load()
     slug = new_slug()
@@ -653,6 +685,7 @@ def wiki_new():
         "module": module or None,
         "quiz": quiz,
         "tags": tags,
+        "review_by": review_by or None,
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "updated_by": display_name(session.get("user")),
     }
@@ -671,6 +704,20 @@ def wiki_view(slug):
     if not page or page.get("course_order") is not None:
         abort(404)
     return render_template("wiki_view.html", page=page, slug=slug)
+
+
+@app.get("/wiki/<slug>/history")
+def page_history(slug):
+    guard = require_login()
+    if guard:
+        return guard
+    pages = github_store.pages_store.load()
+    page = pages.get(slug)
+    if not page:
+        abort(404)
+    commits = github_store.history(github_store.WIKI_PATH, contains=page["title"])
+    dest = "course_view" if page.get("course_order") is not None else "wiki_view"
+    return render_template("page_history.html", page=page, slug=slug, commits=commits, dest=dest)
 
 
 @app.get("/wiki/<slug>/edit")
@@ -704,6 +751,7 @@ def wiki_edit(slug):
     quiz = parse_quiz(request.form.get("quiz_text", ""))
     plan_day = request.form.get("plan_day", "").strip()
     module = request.form.get("module", "").strip()
+    review_by = request.form.get("review_by", "").strip()
     tags = [t.strip() for t in request.form.get("tags", "").split(",") if t.strip()]
     pages[slug] = {
         "title": title,
@@ -713,6 +761,7 @@ def wiki_edit(slug):
         "module": module or None,
         "quiz": quiz,
         "tags": tags,
+        "review_by": review_by or None,
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "updated_by": display_name(session.get("user")),
     }

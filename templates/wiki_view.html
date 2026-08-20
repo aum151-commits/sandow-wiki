@@ -7,6 +7,7 @@
   <div class="content-html">{{ page.html | safe }}</div>
   <div class="view-actions">
     <a class="btn" href="{{ url_for('wiki_edit_form', slug=slug) }}">Редактировать</a>
+    <a class="btn secondary" href="{{ url_for('page_history', slug=slug) }}">История правок</a>
     <a class="btn secondary" href="{{ url_for('wiki_list') }}">К списку</a>
     <form method="post" action="{{ url_for('wiki_delete', slug=slug) }}" onsubmit="return confirm('Удалить страницу «{{ page.title }}»?');" style="margin:0">
       <button type="submit" class="btn secondary" style="color:#c0392b">Удалить</button>

@@ -3,6 +3,12 @@
 {% block content %}
 <h1>Сотрудники</h1>
 <p style="color:var(--muted)">Доступ можно отключить в любой момент — например, если сотрудник уволился.</p>
+{% if last_reset %}
+<div class="card" style="margin-bottom:16px; border-color:var(--accent)">
+  Новый пароль для <strong>{{ last_reset.username }}</strong>: <span class="meta" style="font-size:1rem">{{ last_reset.password }}</span>
+  — сообщите сотруднику лично, здесь он больше не покажется.
+</div>
+{% endif %}
 <div class="card">
   {% if rows %}
   <ul class="page-list">
@@ -19,11 +25,17 @@
           </div>
         </div>
         {% if u.username != current_user %}
-        <form method="post" action="{{ url_for('admin_toggle_user', username=u.username) }}" style="margin:0">
-          <button type="submit" class="btn secondary">
-            {{ "Отключить доступ" if u.get("active", True) else "Включить доступ" }}
-          </button>
-        </form>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <form method="post" action="{{ url_for('admin_toggle_user', username=u.username) }}" style="margin:0">
+            <button type="submit" class="btn secondary">
+              {{ "Отключить доступ" if u.get("active", True) else "Включить доступ" }}
+            </button>
+          </form>
+          <form method="post" action="{{ url_for('admin_reset_password', username=u.username) }}" style="margin:0"
+                onsubmit="return confirm('Сбросить пароль для {{ u.display_name }}? Старый пароль перестанет работать.')">
+            <button type="submit" class="btn secondary">Сбросить пароль</button>
+          </form>
+        </div>
         {% else %}
         <span class="meta">это вы</span>
         {% endif %}

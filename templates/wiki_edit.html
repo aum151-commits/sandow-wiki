@@ -29,9 +29,16 @@
     </div>
   </div>
   {% endif %}
-  <div class="field">
-    <label for="tags">Теги (через запятую, необязательно)</label>
-    <input type="text" id="tags" name="tags" value="{{ tags_text }}" placeholder="например: возражения, звонок, цена">
+  <div class="field" style="display:flex; gap:20px; flex-wrap:wrap">
+    <div style="flex:1; min-width:220px">
+      <label for="tags">Теги (через запятую, необязательно)</label>
+      <input type="text" id="tags" name="tags" value="{{ tags_text }}" placeholder="например: возражения, звонок, цена">
+    </div>
+    <div>
+      <label for="review_by">Перепроверить факты до (необязательно)</label>
+      <input type="date" id="review_by" name="review_by" style="max-width:170px"
+        value="{{ page.review_by if page and page.review_by else '' }}">
+    </div>
   </div>
   <div class="field">
     <label>Содержание</label>
