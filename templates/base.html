@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+(function () {
+  var saved = localStorage.getItem('sandow-theme');
+  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+})();
+</script>
 <title>{% block title %}Сандов Фитнес{% endblock %}</title>
 <link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,19 +23,43 @@
     <img src="{{ url_for('static', filename='logo.png') }}" alt="" width="28" height="28">
     Сандов Фитнес
   </a>
-  {% if current_user %}
-  <nav>
-    <a href="{{ url_for('home') }}">Главная</a>
-    <a href="{{ url_for('course_list') }}">Обучение</a>
-    <a href="{{ url_for('wiki_list') }}">База знаний</a>
-    <a href="{{ url_for('profile') }}">Профиль</a>
-    {% if current_user_is_admin %}<a href="{{ url_for('admin_users') }}">Сотрудники</a>{% endif %}
-    <a href="{{ url_for('logout') }}">Выйти</a>
-  </nav>
-  {% endif %}
+  <div style="display:flex; align-items:center; flex-wrap:wrap">
+    {% if current_user %}
+    <nav>
+      <a href="{{ url_for('home') }}">Главная</a>
+      <a href="{{ url_for('course_list') }}">Обучение</a>
+      <a href="{{ url_for('wiki_list') }}">База знаний</a>
+      <a href="{{ url_for('profile') }}">Профиль</a>
+      {% if current_user_is_admin %}<a href="{{ url_for('admin_users') }}">Сотрудники</a>{% endif %}
+      <a href="{{ url_for('logout') }}">Выйти</a>
+    </nav>
+    {% endif %}
+    <button type="button" class="theme-toggle" id="themeToggle">Светлая тема</button>
+  </div>
 </header>
 <main>
 {% block content %}{% endblock %}
 </main>
+<script>
+(function () {
+  var btn = document.getElementById('themeToggle');
+  function label() {
+    var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    btn.textContent = isLight ? 'Тёмная тема' : 'Светлая тема';
+  }
+  label();
+  btn.addEventListener('click', function () {
+    var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    if (isLight) {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('sandow-theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('sandow-theme', 'light');
+    }
+    label();
+  });
+})();
+</script>
 </body>
 </html>
