@@ -716,8 +716,15 @@ def page_history(slug):
     if not page:
         abort(404)
     commits = github_store.history(github_store.WIKI_PATH, contains=page["title"])
+    filtered = True
+    if not commits:
+        # заголовок мог не совпасть с текстом старого коммита (массовая
+        # загрузка через скрипт, переименование страницы и т.п.) —
+        # лучше показать последние правки файла вообще, чем пустоту
+        commits = github_store.history(github_store.WIKI_PATH, contains=None, limit=10)
+        filtered = False
     dest = "course_view" if page.get("course_order") is not None else "wiki_view"
-    return render_template("page_history.html", page=page, slug=slug, commits=commits, dest=dest)
+    return render_template("page_history.html", page=page, slug=slug, commits=commits, dest=dest, filtered=filtered)
 
 
 @app.get("/wiki/<slug>/edit")
