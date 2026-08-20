@@ -97,6 +97,7 @@ def inject_user():
         "current_user": session.get("user"),
         "current_user_name": display_name(session.get("user")),
         "current_user_is_admin": is_admin(session.get("user")),
+        "trainer_url": trainer_link.TRAINER_LINK_URL,
     }
 
 

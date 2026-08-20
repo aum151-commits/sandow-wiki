@@ -6,6 +6,7 @@
 (должно совпадать с тем, что он вводит в тренажёре).
 """
 import os
+from urllib.parse import urlsplit, urlunsplit, quote
 
 import requests
 
@@ -13,6 +14,19 @@ TRAINER_URL = os.environ.get("TRAINER_URL", "https://sandow-voice-trainer.onrend
 TRAINER_USER = os.environ.get("TRAINER_USER", "")
 TRAINER_PASSWORD = os.environ.get("TRAINER_PASSWORD", "")
 TIMEOUT = 45  # бесплатный тариф Render засыпает, первый запрос может будить сервис
+
+
+def _link_with_credentials(url: str, user: str, password: str) -> str:
+    """Ссылка со встроенным логином/паролем (user:pass@host) — переход
+    по клику проходит Basic Auth тренажёра сразу, без второго окна входа."""
+    if not user:
+        return url
+    parts = urlsplit(url)
+    netloc = f"{quote(user)}:{quote(password)}@{parts.netloc}"
+    return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
+
+
+TRAINER_LINK_URL = _link_with_credentials(TRAINER_URL, TRAINER_USER, TRAINER_PASSWORD)
 
 
 def best_score(manager_name: str):
