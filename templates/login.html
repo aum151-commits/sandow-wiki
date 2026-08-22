@@ -1,11 +1,11 @@
-{% extends "base.html" %}
-{% block title %}Вход — Сандов Фитнес{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Вход — Лига Сандов{% endblock %}
 {% block content %}
 <div class="login-wrap">
   <img src="{{ url_for('static', filename='logo.png') }}" alt="" width="64" height="64" style="margin-bottom:12px">
   <span class="eyebrow" style="text-align:center">Отдел продаж</span>
-  <h1>Сандов Фитнес</h1>
-  <p style="color:var(--muted)">Обучение и база знаний</p>
+  <h1>Лига Сандов</h1>
+  <p style="color:var(--muted)">прокачивай навыки</p>
   <div class="card">
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
     <form method="post">

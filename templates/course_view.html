@@ -1,5 +1,5 @@
-{% extends "base.html" %}
-{% block title %}{{ page.title }} — Сандов Фитнес{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}{{ page.title }} — Лига Сандов{% endblock %}
 {% block content %}
 <div class="card">
   <p class="meta" style="color:var(--muted)">{% if page.module %}{{ page.module }} · {% endif %}Урок {{ page.course_order }}{% if page.plan_day %} · по плану — день {{ page.plan_day }}{% endif %} · обновлено {{ page.updated_at[:10] }}</p>
