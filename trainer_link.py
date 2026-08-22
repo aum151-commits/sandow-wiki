@@ -37,7 +37,7 @@ def best_score(manager_name: str):
     try:
         r = requests.get(
             f"{TRAINER_URL}/api/trainings",
-            params={"manager_name": manager_name},
+            params={"manager_name": manager_name, "exact": "1"},
             auth=(TRAINER_USER, TRAINER_PASSWORD),
             timeout=TIMEOUT,
         )
