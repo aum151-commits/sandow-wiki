@@ -94,11 +94,20 @@ def is_admin(username) -> bool:
 
 @app.context_processor
 def inject_user():
+    username = session.get("user")
+    trainer_url = trainer_link.TRAINER_LINK_URL
+    if username:
+        users = github_store.users_store.load()
+        account = users.get(username)
+        if account:
+            # персональная ссылка — тренажёр сам подставит имя сотрудника
+            # (?manager=), вводить его руками при заходе не нужно
+            trainer_url = trainer_link.manager_trainer_link(account)
     return {
-        "current_user": session.get("user"),
-        "current_user_name": display_name(session.get("user")),
-        "current_user_is_admin": is_admin(session.get("user")),
-        "trainer_url": trainer_link.TRAINER_LINK_URL,
+        "current_user": username,
+        "current_user_name": display_name(username),
+        "current_user_is_admin": is_admin(username),
+        "trainer_url": trainer_url,
     }
 
 

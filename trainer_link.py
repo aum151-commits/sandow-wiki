@@ -6,7 +6,7 @@
 (должно совпадать с тем, что он вводит в тренажёре).
 """
 import os
-from urllib.parse import urlsplit, urlunsplit, quote
+from urllib.parse import urlsplit, urlunsplit, quote, urlencode
 
 import requests
 
@@ -16,17 +16,29 @@ TRAINER_PASSWORD = os.environ.get("TRAINER_PASSWORD", "")
 TIMEOUT = 45  # бесплатный тариф Render засыпает, первый запрос может будить сервис
 
 
-def _link_with_credentials(url: str, user: str, password: str) -> str:
-    """Ссылка со встроенным логином/паролем (user:pass@host) — переход
-    по клику проходит Basic Auth тренажёра сразу, без второго окна входа."""
-    if not user:
-        return url
+def _link_with_credentials(url: str, user: str, password: str, manager: str = "") -> str:
+    """Ссылка со встроенным логином/паролем (user:pass@host) — переход по
+    клику проходит Basic Auth тренажёра сразу, без второго окна входа.
+    Если передано manager — тренажёр (app.js, читает ?manager=) сам
+    подставит имя сотрудника в поле старта тренировки, не нужно вводить
+    вручную и не будет расхождений в написании имени между сессиями."""
     parts = urlsplit(url)
-    netloc = f"{quote(user)}:{quote(password)}@{parts.netloc}"
-    return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
+    netloc = f"{quote(user)}:{quote(password)}@{parts.netloc}" if user else parts.netloc
+    query = urlencode({"manager": manager}) if manager else parts.query
+    return urlunsplit((parts.scheme, netloc, parts.path, query, parts.fragment))
 
 
 TRAINER_LINK_URL = _link_with_credentials(TRAINER_URL, TRAINER_USER, TRAINER_PASSWORD)
+
+
+def manager_trainer_link(account: dict) -> str:
+    """Персональная ссылка на тренажёр для конкретного сотрудника — с
+    Basic Auth и его именем в ?manager=, чтобы попадал в тренажёр без
+    единого лишнего клика или ввода. Имя — из профиля (trainer_name),
+    если не указано — имя из вики (display_name), чтобы работало сразу,
+    без обязательной ручной настройки профиля."""
+    manager = (account.get("trainer_name") or account.get("display_name") or "").strip()
+    return _link_with_credentials(TRAINER_URL, TRAINER_USER, TRAINER_PASSWORD, manager=manager)
 
 
 def best_score(manager_name: str):
