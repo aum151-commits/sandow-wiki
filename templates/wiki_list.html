@@ -8,13 +8,11 @@
   <button type="submit">Найти</button>
   <a class="btn secondary" href="{{ url_for('wiki_new_form') }}">+ Новая страница</a>
 </form>
-{% if all_tags %}
-<div style="margin-bottom:16px">
-  {% for t in all_tags %}
-  <a class="tag-chip {{ 'active' if t == active_tag }}"
-     href="{{ url_for('wiki_list', tag=(t if t != active_tag else None), q=q) }}">{{ t }}</a>
-  {% endfor %}
-</div>
+{% if active_tag %}
+<p style="margin-bottom:16px">
+  Фильтр по тегу:
+  <a class="tag-chip active" href="{{ url_for('wiki_list', q=q) }}">{{ active_tag }} ✕</a>
+</p>
 {% endif %}
 {% if groups %}
   {% for category, cat_items in groups %}
@@ -63,5 +61,16 @@
     {% endfor %}
   </ul>
 </div>
+{% endif %}
+{% if all_tags %}
+<details style="margin-top:28px">
+  <summary style="cursor:pointer; color:var(--muted)">Искать по тегу ({{ all_tags|length }})</summary>
+  <div style="margin-top:12px">
+    {% for t in all_tags %}
+    <a class="tag-chip {{ 'active' if t == active_tag }}"
+       href="{{ url_for('wiki_list', tag=(t if t != active_tag else None), q=q) }}">{{ t }}</a>
+    {% endfor %}
+  </div>
+</details>
 {% endif %}
 {% endblock %}
