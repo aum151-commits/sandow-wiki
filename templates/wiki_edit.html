@@ -30,6 +30,15 @@
   </div>
   {% endif %}
   <div class="field" style="display:flex; gap:20px; flex-wrap:wrap">
+    <div>
+      <label for="category">Раздел базы знаний</label>
+      <select id="category" name="category" style="max-width:240px">
+        <option value="">— без раздела —</option>
+        {% for c in category_options %}
+        <option value="{{ c }}" {{ 'selected' if page and page.category == c }}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
     <div style="flex:1; min-width:220px">
       <label for="tags">Теги (через запятую, необязательно)</label>
       <input type="text" id="tags" name="tags" value="{{ tags_text }}" placeholder="например: возражения, звонок, цена">

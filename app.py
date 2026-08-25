@@ -615,6 +615,20 @@ def course_progress_overview():
 
 # ---------- вики (база знаний, не входит в курс) ----------
 
+# Порядок разделов на странице базы знаний — по тому, что реально ищет
+# менеджер, а не по типу контента. Страница без категории (старая или
+# только что созданная через форму) попадает в «Без категории» и не
+# теряется. Согласовано с Ольгой 25.08.2026.
+CATEGORY_ORDER = [
+    "Клиент и доступ в клуб",
+    "Продукт и цены",
+    "Личный кабинет",
+    "Тренеры",
+    "Разбор звонков",
+]
+UNCATEGORIZED = "Без категории"
+
+
 @app.get("/wiki")
 def wiki_list():
     guard = require_login()
@@ -647,9 +661,21 @@ def wiki_list():
         ]
         lesson_matches.sort(key=lambda it: it["course_order"])
     items.sort(key=lambda it: it["title"].lower())
+
+    groups = []
+    if not q and not tag:
+        # обычный просмотр — группируем по категориям; поиск и фильтр по
+        # тегу показывают плоский список результатов, группировка тут
+        # только мешает считать совпадения
+        by_cat = {}
+        for it in items:
+            by_cat.setdefault(it.get("category") or UNCATEGORIZED, []).append(it)
+        order = CATEGORY_ORDER + [c for c in by_cat if c not in CATEGORY_ORDER]
+        groups = [(c, by_cat[c]) for c in order if c in by_cat]
+
     today_iso = today().isoformat()
     return render_template(
-        "wiki_list.html", items=items, lesson_matches=lesson_matches,
+        "wiki_list.html", items=items, groups=groups, lesson_matches=lesson_matches,
         q=request.args.get("q", ""), all_tags=all_tags, active_tag=tag, today_iso=today_iso,
     )
 
@@ -659,7 +685,8 @@ def wiki_new_form():
     guard = require_login()
     if guard:
         return guard
-    return render_template("wiki_edit.html", page=None, slug=None, quiz_text="", tags_text="")
+    return render_template("wiki_edit.html", page=None, slug=None, quiz_text="", tags_text="",
+                            category_options=CATEGORY_ORDER)
 
 
 @app.post("/wiki/new")
@@ -673,6 +700,7 @@ def wiki_new():
     quiz = parse_quiz(request.form.get("quiz_text", ""))
     plan_day = request.form.get("plan_day", "").strip()
     module = request.form.get("module", "").strip()
+    category = request.form.get("category", "").strip()
     review_by = request.form.get("review_by", "").strip()
     tags = [t.strip() for t in request.form.get("tags", "").split(",") if t.strip()]
     pages = github_store.pages_store.load()
@@ -685,6 +713,7 @@ def wiki_new():
         "course_order": int(course_order) if course_order else None,
         "plan_day": int(plan_day) if plan_day else None,
         "module": module or None,
+        "category": category or None,
         "quiz": quiz,
         "tags": tags,
         "review_by": review_by or None,
@@ -742,6 +771,7 @@ def wiki_edit_form(slug):
     return render_template(
         "wiki_edit.html", page=page, slug=slug,
         quiz_text=quiz_to_text(page.get("quiz")), tags_text=", ".join(page.get("tags") or []),
+        category_options=CATEGORY_ORDER,
     )
 
 
@@ -760,6 +790,7 @@ def wiki_edit(slug):
     quiz = parse_quiz(request.form.get("quiz_text", ""))
     plan_day = request.form.get("plan_day", "").strip()
     module = request.form.get("module", "").strip()
+    category = request.form.get("category", "").strip()
     review_by = request.form.get("review_by", "").strip()
     tags = [t.strip() for t in request.form.get("tags", "").split(",") if t.strip()]
     pages[slug] = {
@@ -768,6 +799,7 @@ def wiki_edit(slug):
         "course_order": int(course_order) if course_order else None,
         "plan_day": int(plan_day) if plan_day else None,
         "module": module or None,
+        "category": category or None,
         "quiz": quiz,
         "tags": tags,
         "review_by": review_by or None,

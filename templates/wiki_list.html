@@ -16,12 +16,30 @@
   {% endfor %}
 </div>
 {% endif %}
+{% if groups %}
+  {% for category, cat_items in groups %}
+  <h2 style="margin-top:24px">{{ category }}</h2>
+  <div class="card">
+    <ul class="page-list">
+      {% for it in cat_items %}
+      <li>
+        <a href="{{ url_for('wiki_view', slug=it.slug) }}">{{ it.title }}</a>
+        {% if it.review_by and it.review_by < today_iso %}<span class="lesson-flag overdue">перепроверить факты</span>{% endif %}
+        {% for t in (it.tags or []) %}<span class="lesson-flag" style="background:transparent; border:1px solid var(--border); color:var(--muted)">{{ t }}</span>{% endfor %}
+        <div class="meta">Обновлено {{ it.updated_at[:10] }} · {{ it.updated_by }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+{% else %}
 <div class="card">
   {% if items %}
   <ul class="page-list">
     {% for it in items %}
     <li>
       <a href="{{ url_for('wiki_view', slug=it.slug) }}">{{ it.title }}</a>
+      {% if it.category %}<span class="lesson-flag" style="background:transparent; border:1px solid var(--border); color:var(--muted)">{{ it.category }}</span>{% endif %}
       {% if it.review_by and it.review_by < today_iso %}<span class="lesson-flag overdue">перепроверить факты</span>{% endif %}
       {% for t in (it.tags or []) %}<span class="lesson-flag" style="background:transparent; border:1px solid var(--border); color:var(--muted)">{{ t }}</span>{% endfor %}
       <div class="meta">Обновлено {{ it.updated_at[:10] }} · {{ it.updated_by }}</div>
@@ -32,6 +50,7 @@
   <p style="color:var(--muted)">{% if q or active_tag %}Ничего не нашлось.{% else %}Страниц пока нет — добавьте первую.{% endif %}</p>
   {% endif %}
 </div>
+{% endif %}
 {% if lesson_matches %}
 <h2 style="margin-top:28px">Найдено в «Обучении»</h2>
 <div class="card">
