@@ -55,3 +55,57 @@ def best_score(manager_name: str):
     if not ratios:
         return None
     return max(ratios), len(sessions)
+
+
+def recent_trainings(manager_name: str, limit: int = 5):
+    """Последние завершённые попытки с деталями (балл, сильные/слабые
+    стороны, рекомендация судьи, следующее упражнение) для страницы
+    прогресса. Список идёт одним запросом, детали — по одному запросу на
+    попытку (эндпоинт тренажёра не отдаёт их пачкой), поэтому лимит
+    небольшой: бесплатный Render может спать, каждый запрос до TIMEOUT сек.
+    Возвращает [] если у сотрудника ещё нет завершённых попыток, None —
+    если тренажёр недоступен или имя не привязано."""
+    if not manager_name or not TRAINER_USER:
+        return None
+    try:
+        r = requests.get(
+            f"{TRAINER_URL}/api/trainings",
+            params={"manager_name": manager_name, "exact": "1"},
+            auth=(TRAINER_USER, TRAINER_PASSWORD),
+            timeout=TIMEOUT,
+        )
+        r.raise_for_status()
+        sessions = r.json()
+    except (requests.RequestException, ValueError):
+        return None
+    if not isinstance(sessions, list):
+        return None
+
+    finished = [s for s in sessions if s.get("finished_at") and s.get("max_score")]
+    finished.sort(key=lambda s: s.get("started_at") or "", reverse=True)
+    out = []
+    for s in finished[:limit]:
+        summary = {}
+        try:
+            dr = requests.get(
+                f"{TRAINER_URL}/api/trainings/{s['id']}",
+                auth=(TRAINER_USER, TRAINER_PASSWORD),
+                timeout=TIMEOUT,
+            )
+            if dr.ok:
+                summary = (dr.json() or {}).get("summary") or {}
+        except requests.RequestException:
+            pass  # без деталей — всё равно покажем хотя бы балл
+        out.append({
+            "started_at": s.get("started_at"),
+            "script_type": s.get("script_type"),
+            "outcome": s.get("outcome"),
+            "score": s.get("score"),
+            "max_score": s.get("max_score"),
+            "grade": s.get("grade"),
+            "strengths": summary.get("strengths") or [],
+            "weaknesses": summary.get("weaknesses") or [],
+            "recommendation": summary.get("recommendation") or "",
+            "next_drill": summary.get("next_drill") or "",
+        })
+    return out

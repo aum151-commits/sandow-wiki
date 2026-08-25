@@ -555,12 +555,35 @@ def course_quiz_submit(slug):
     total = len(results)
     correct_count = sum(1 for r in results if r["is_correct"])
     passed = total > 0 and correct_count == total
-    if passed:
-        progress = github_store.progress_store.load()
-        user_progress = progress.setdefault(session["user"], {})
-        record_pass(user_progress, slug, f"{correct_count}/{total}")
-        github_store.progress_store.save(
-            progress, f"прогресс: {session['user']} сдал тест «{page['title']}» ({correct_count}/{total})")
+
+    if total > 0:
+        # Лог каждой попытки (не только успешной) — по нему строится
+        # «точки роста»: что именно чаще всего отвечают неверно, по темам.
+        # Отдельный файл от progress.json (там жёсткая схема {slug: entry}
+        # под интервальное повторение — список попыток туда не примешать).
+        # До этой правки (25.08.2026) конкретные вопросы не сохранялись —
+        # история копится только с этого момента, задним числом не восстановить.
+        all_attempts = github_store.attempts_store.load()
+        user_attempts = all_attempts.setdefault(session["user"], [])
+        user_attempts.append({
+            "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "lesson": slug,
+            "title": page["title"],
+            "module": page.get("module"),
+            "total": total,
+            "correct": correct_count,
+            "wrong": [r["question"] for r in results if not r["is_correct"]],
+        })
+        all_attempts[session["user"]] = user_attempts[-200:]  # не растим файл бесконечно
+        github_store.attempts_store.save(
+            all_attempts, f"попытки: {session['user']} — «{page['title']}» ({correct_count}/{total})")
+
+        if passed:
+            progress = github_store.progress_store.load()
+            user_progress = progress.setdefault(session["user"], {})
+            record_pass(user_progress, slug, f"{correct_count}/{total}")
+            github_store.progress_store.save(
+                progress, f"прогресс: {session['user']} сдал тест «{page['title']}» ({correct_count}/{total})")
 
     lessons = sorted(
         [{"slug": s, **m} for s, m in pages.items() if m.get("course_order") is not None],
@@ -612,11 +635,91 @@ def course_progress_overview():
         )
         cert = account.get("cert_status", {})
         rows.append({
-            "name": account.get("display_name", username), "done": done, "day_n": day_n,
+            "username": username, "name": account.get("display_name", username), "done": done, "day_n": day_n,
             "overdue": overdue, "certified": cert.get("passed", False),
             "buddy": account.get("buddy", {}),
         })
     return render_template("course_progress.html", rows=rows, total=len(lessons), can_see_overdue=can_see_overdue)
+
+
+def _can_see_progress_detail(username_of_viewer: str) -> bool:
+    users = github_store.users_store.load()
+    viewer = users.get(username_of_viewer, {})
+    return viewer.get("role") == "admin" or bool(viewer.get("see_progress_detail"))
+
+
+@app.get("/course/progress/<username>")
+def course_progress_detail(username):
+    guard = require_login()
+    if guard:
+        return guard
+    viewer_name = session["user"]
+    is_own = username == viewer_name
+    if not is_own and not _can_see_progress_detail(viewer_name):
+        abort(403)
+
+    users = github_store.users_store.load()
+    account = users.get(username)
+    if not account:
+        abort(404)
+
+    pages = github_store.pages_store.load()
+    lessons = sorted(
+        [{"slug": s, **m} for s, m in pages.items() if m.get("course_order") is not None],
+        key=lambda it: it["course_order"],
+    )
+    user_progress = github_store.progress_store.load().get(username, {})
+    user_attempts = github_store.attempts_store.load().get(username, [])
+
+    modules = []
+    seen_order = []
+    by_module = {}
+    for lesson in lessons:
+        mod = lesson.get("module") or "Без модуля"
+        if mod not in by_module:
+            by_module[mod] = []
+            seen_order.append(mod)
+        by_module[mod].append(lesson)
+    for mod in seen_order:
+        mod_lessons = by_module[mod]
+        done = sum(1 for l in mod_lessons if l["slug"] in user_progress)
+        modules.append({
+            "name": mod,
+            "done": done,
+            "total": len(mod_lessons),
+            "percent": round(done / len(mod_lessons) * 100) if mod_lessons else 0,
+            "lessons": [
+                {
+                    "title": l["title"],
+                    "done": l["slug"] in user_progress,
+                    "score": user_progress.get(l["slug"], {}).get("score"),
+                }
+                for l in mod_lessons
+            ],
+        })
+
+    # «точки роста» — какие вопросы чаще всего отвечают неверно, копится
+    # только с 25.08.2026 (см. комментарий в course_quiz_submit), у новых
+    # сотрудников список может быть пустым первое время — это нормально.
+    mistake_counts = {}
+    for a in user_attempts:
+        for q in a.get("wrong", []):
+            key = (a.get("title", ""), q)
+            mistake_counts[key] = mistake_counts.get(key, 0) + 1
+    top_mistakes = sorted(mistake_counts.items(), key=lambda kv: -kv[1])[:12]
+    top_mistakes = [{"lesson": t, "question": q, "count": c} for (t, q), c in top_mistakes]
+
+    recent_attempts = sorted(user_attempts, key=lambda a: a.get("at", ""), reverse=True)[:15]
+
+    trainer_name = account.get("trainer_name", "")
+    trainer_data = trainer_link.recent_trainings(trainer_name) if trainer_name else None
+
+    return render_template(
+        "course_progress_detail.html",
+        account=account, username=username, is_own=is_own,
+        modules=modules, top_mistakes=top_mistakes, recent_attempts=recent_attempts,
+        trainer_name=trainer_name, trainer_data=trainer_data,
+    )
 
 
 # ---------- вики (база знаний, не входит в курс) ----------

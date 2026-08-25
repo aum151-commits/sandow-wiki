@@ -8,7 +8,11 @@
   <ul class="page-list">
     {% for r in rows %}
     <li>
+      {% if can_see_overdue or r.username == current_user %}
+      <a href="{{ url_for('course_progress_detail', username=r.username) }}">{{ r.name }}</a>
+      {% else %}
       {{ r.name }}
+      {% endif %}
       {% if r.certified %}<span class="lesson-flag" style="background:#e3f3e6; color:#1e6b2e">допущен к звонкам</span>{% endif %}
       {% if can_see_overdue and r.overdue %}<span class="lesson-flag overdue">просрочено уроков: {{ r.overdue }}</span>{% endif %}
       <div class="meta">

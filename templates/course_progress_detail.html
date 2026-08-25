@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Прогресс: {{ account.display_name }} — Лига Сандов{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('course_progress_overview') }}">← Прогресс команды</a></p>
+<h1>{{ account.display_name }}{% if is_own %} (это вы){% endif %}</h1>
+
+<h2 style="margin-top:24px">По модулям обучения</h2>
+{% if modules %}
+<div class="card">
+  <ul class="page-list">
+    {% for m in modules %}
+    <li>
+      {{ m.name }}
+      <div class="meta">{{ m.done }} / {{ m.total }} уроков · {{ m.percent }}%</div>
+      <div class="meta" style="margin-top:4px">
+        {% for l in m.lessons %}
+        <span class="lesson-flag" style="background:transparent; border:1px solid var(--border); color:{{ 'var(--muted)' if l.done else '#b23' }}">
+          {{ '✓' if l.done else '—' }} {{ l.title }}{% if l.score %} ({{ l.score }}){% endif %}
+        </span>
+        {% endfor %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% else %}
+<p style="color:var(--muted)">Уроков в курсе пока нет.</p>
+{% endif %}
+
+<h2 style="margin-top:28px">Точки роста — часто неверные вопросы</h2>
+<p style="color:var(--muted); font-size:.9rem">Копится с 25.08.2026, старые попытки в этот список не попали.</p>
+{% if top_mistakes %}
+<div class="card">
+  <ul class="page-list">
+    {% for item in top_mistakes %}
+    <li>
+      {{ item.question }}
+      <div class="meta">{{ item.lesson }} · неверно {{ item.count }} раз(а)</div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% else %}
+<p style="color:var(--muted)">Пока нет данных — либо ещё не сдавал тесты, либо ни разу не ошибался.</p>
+{% endif %}
+
+{% if recent_attempts %}
+<h2 style="margin-top:28px">Последние попытки тестов</h2>
+<div class="card">
+  <ul class="page-list">
+    {% for a in recent_attempts %}
+    <li>
+      {{ a.title }}
+      <div class="meta">{{ a.at[:10] }} · {{ a.correct }}/{{ a.total }}{% if a.wrong %} · ошибся: {{ a.wrong | join('; ') }}{% endif %}</div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<h2 style="margin-top:28px">Тренажёр звонков</h2>
+{% if not trainer_name %}
+<p style="color:var(--muted)">Имя в тренажёре не указано в профиле — привязки нет, результатов не показать. {% if is_own %}Укажите его в разделе «Профиль».{% endif %}</p>
+{% elif trainer_data is none %}
+<p style="color:var(--muted)">Тренажёр сейчас недоступен (бесплатный сервер мог заснуть) — попробуйте открыть страницу ещё раз через минуту.</p>
+{% elif not trainer_data %}
+<p style="color:var(--muted)">Завершённых попыток в тренажёре пока нет.</p>
+{% else %}
+<div class="card">
+  <ul class="page-list">
+    {% for t in trainer_data %}
+    <li>
+      {{ t.script_type or 'Тренировка' }} — {{ t.score }}/{{ t.max_score }} ({{ t.grade or '—' }})
+      <div class="meta">{{ (t.started_at or '')[:10] }} · исход: {{ t.outcome or '—' }}</div>
+      {% if t.strengths %}<div class="meta" style="color:#1e6b2e">+ {{ t.strengths | join('; ') }}</div>{% endif %}
+      {% if t.weaknesses %}<div class="meta" style="color:#b23">− {{ t.weaknesses | join('; ') }}</div>{% endif %}
+      {% if t.recommendation %}<div class="meta"><strong>Рекомендация:</strong> {{ t.recommendation }}</div>{% endif %}
+      {% if t.next_drill %}<div class="meta"><strong>Что потренировать дальше:</strong> {{ t.next_drill }}</div>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

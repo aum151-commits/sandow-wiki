@@ -98,6 +98,11 @@ def history(path: str, contains: str = None, limit: int = 15):
 WIKI_PATH = os.environ.get("WIKI_PATH", "wiki-content/pages.json")
 USERS_PATH = os.environ.get("WIKI_USERS_PATH", "wiki-content/users.json")
 PROGRESS_PATH = os.environ.get("WIKI_PROGRESS_PATH", "wiki-content/progress.json")
+# Отдельно от progress.json: там прогресс хранится {slug: entry} и на нём
+# завязана due_for_review() — примешивать туда что-то не по схеме лесона
+# (например список попыток) её ломает. Попытки тестов — свой файл.
+ATTEMPTS_PATH = os.environ.get("WIKI_ATTEMPTS_PATH", "wiki-content/attempts.json")
 pages_store = JsonFileStore(WIKI_PATH, default={})
 users_store = JsonFileStore(USERS_PATH, default={})
 progress_store = JsonFileStore(PROGRESS_PATH, default={})
+attempts_store = JsonFileStore(ATTEMPTS_PATH, default={})
