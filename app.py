@@ -594,6 +594,8 @@ def course_progress_overview():
     progress = github_store.progress_store.load()
     rows = []
     for username, account in sorted(users.items(), key=lambda kv: kv[1].get("display_name", kv[0])):
+        if account.get("role") == "admin" or account.get("exclude_from_progress"):
+            continue
         user_progress = progress.get(username, {})
         done = sum(1 for lesson in lessons if lesson["slug"] in user_progress)
         day_n = onboarding_day(username, users)
