@@ -10,7 +10,7 @@
     <li>
       {{ r.name }}
       {% if r.certified %}<span class="lesson-flag" style="background:#e3f3e6; color:#1e6b2e">допущен к звонкам</span>{% endif %}
-      {% if r.overdue %}<span class="lesson-flag overdue">просрочено уроков: {{ r.overdue }}</span>{% endif %}
+      {% if can_see_overdue and r.overdue %}<span class="lesson-flag overdue">просрочено уроков: {{ r.overdue }}</span>{% endif %}
       <div class="meta">
         {{ r.done }} / {{ total }} уроков{% if total %} · {{ (r.done / total * 100) | round | int }}%{% endif %}
         · день {{ r.day_n }}

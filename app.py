@@ -592,6 +592,12 @@ def course_progress_overview():
     )
     users = github_store.users_store.load()
     progress = github_store.progress_store.load()
+    viewer = users.get(session.get("user"), {})
+    # видеть просрочки — отдельное право от админки сайта: Олег должен
+    # видеть детали прогресса ОП, но не должен получать доступ к
+    # управлению аккаунтами (/admin/users). Просьба Ольги 25.08.2026:
+    # публичный флаг «отстаёт» демотивирует рядовых, руководителям нужен.
+    can_see_overdue = viewer.get("role") == "admin" or viewer.get("see_progress_detail")
     rows = []
     for username, account in sorted(users.items(), key=lambda kv: kv[1].get("display_name", kv[0])):
         if account.get("role") == "admin" or account.get("exclude_from_progress"):
@@ -610,7 +616,7 @@ def course_progress_overview():
             "overdue": overdue, "certified": cert.get("passed", False),
             "buddy": account.get("buddy", {}),
         })
-    return render_template("course_progress.html", rows=rows, total=len(lessons))
+    return render_template("course_progress.html", rows=rows, total=len(lessons), can_see_overdue=can_see_overdue)
 
 
 # ---------- вики (база знаний, не входит в курс) ----------
