@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from flask import Flask, abort, redirect, render_template, request, session, url_for
+from flask import Flask, abort, redirect, render_template, request, send_from_directory, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import github_store
@@ -24,6 +24,14 @@ import trainer_link
 
 app = Flask(__name__)
 app.secret_key = os.environ["SECRET_KEY"]
+
+
+# iOS проверяет иконку для "На экран «Домой»" не только по <link rel="apple-touch-icon">
+# в <head>, но и по этой конвенции в корне сайта — независимо от тега.
+@app.get("/apple-touch-icon.png")
+@app.get("/apple-touch-icon-precomposed.png")
+def apple_touch_icon_root():
+    return send_from_directory(app.static_folder, "apple-touch-icon.png")
 
 INVITE_CODE = os.environ["INVITE_CODE"]
 ADMIN_INVITE_CODE = os.environ["ADMIN_INVITE_CODE"]
