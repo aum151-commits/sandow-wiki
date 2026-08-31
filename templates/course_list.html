@@ -5,6 +5,19 @@
 <p style="color:var(--muted)">День {{ day_n }} с начала обучения</p>
 <p><a href="{{ url_for('course_progress_overview') }}">Прогресс всей команды →</a></p>
 
+{% if current_user_is_admin and gated_status %}
+<div class="card" style="margin-bottom:20px; border-color:var(--accent)">
+  <p style="margin:0 0 8px; font-weight:600">Разделы на паузе (видны только вам, пока не откроете)</p>
+  {% for g in gated_status %}
+  <form method="post" action="{{ url_for('admin_toggle_module') }}" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:6px">
+    <span>{{ g.module }} — {{ "открыт сотрудникам" if g.visible else "скрыт от сотрудников" }}</span>
+    <input type="hidden" name="module" value="{{ g.module }}">
+    <button type="submit" class="btn secondary">{{ "Скрыть" if g.visible else "Открыть сотрудникам" }}</button>
+  </form>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% for m in modules %}
 <h2 style="margin-top:28px">{{ m.name or "Без модуля" }}</h2>
 <div class="card">

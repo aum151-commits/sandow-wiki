@@ -102,7 +102,12 @@ PROGRESS_PATH = os.environ.get("WIKI_PROGRESS_PATH", "wiki-content/progress.json
 # завязана due_for_review() — примешивать туда что-то не по схеме лесона
 # (например список попыток) её ломает. Попытки тестов — свой файл.
 ATTEMPTS_PATH = os.environ.get("WIKI_ATTEMPTS_PATH", "wiki-content/attempts.json")
+# Глобальные настройки платформы (не привязаны к конкретному пользователю
+# или странице) — например видимость целых разделов для сотрудников,
+# пока раздел не готов к запуску.
+SETTINGS_PATH = os.environ.get("WIKI_SETTINGS_PATH", "wiki-content/settings.json")
 pages_store = JsonFileStore(WIKI_PATH, default={})
 users_store = JsonFileStore(USERS_PATH, default={})
 progress_store = JsonFileStore(PROGRESS_PATH, default={})
 attempts_store = JsonFileStore(ATTEMPTS_PATH, default={})
+settings_store = JsonFileStore(SETTINGS_PATH, default={})

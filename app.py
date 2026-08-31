@@ -448,6 +448,19 @@ def profile_check_certification():
 
 # ---------- обучение ----------
 
+# Модули, которые видны сотрудникам только когда админ явно откроет их
+# (готовятся, но ещё не готовы к запуску) — переключатель settings_store.
+GATED_MODULES = {"Тренер Хаб — найм тренеров"}
+
+
+def gated_module_visible(module: str, is_admin_user: bool) -> bool:
+    if module not in GATED_MODULES:
+        return True
+    if is_admin_user:
+        return True
+    return bool(github_store.settings_store.load().get("show_" + module, False))
+
+
 @app.get("/course")
 def course_list():
     guard = require_login()
@@ -458,12 +471,14 @@ def course_list():
     due = due_for_review(pages, progress)
     users = github_store.users_store.load()
     day_n = onboarding_day(session["user"], users)
+    admin_user = is_admin(session["user"])
     lessons = [
         {"slug": slug, "done": slug in progress, "due": slug in due,
          "overdue": meta.get("plan_day") is not None and meta.get("plan_day") <= day_n and slug not in progress,
          **meta}
         for slug, meta in pages.items()
         if meta.get("course_order") is not None
+        and gated_module_visible(meta.get("module"), admin_user)
     ]
     lessons.sort(key=lambda it: it["course_order"])
 
@@ -476,7 +491,28 @@ def course_list():
             modules.append(seen[key])
         seen[key]["lessons"].append(lesson)
 
-    return render_template("course_list.html", modules=modules, day_n=day_n)
+    settings = github_store.settings_store.load()
+    gated_status = [
+        {"module": m, "visible": bool(settings.get("show_" + m, False))}
+        for m in sorted(GATED_MODULES)
+    ]
+    return render_template("course_list.html", modules=modules, day_n=day_n, gated_status=gated_status)
+
+
+@app.post("/admin/modules/toggle")
+def admin_toggle_module():
+    guard = require_admin()
+    if guard:
+        return guard
+    module = request.form.get("module", "")
+    if module not in GATED_MODULES:
+        abort(400)
+    settings = github_store.settings_store.load()
+    key = "show_" + module
+    settings[key] = not settings.get(key, False)
+    state = "открыт сотрудникам" if settings[key] else "скрыт от сотрудников"
+    github_store.settings_store.save(settings, f"админ: раздел «{module}» {state}")
+    return redirect(url_for("course_list"))
 
 
 @app.get("/course/review")
@@ -503,8 +539,11 @@ def course_view(slug):
     page = pages.get(slug)
     if not page or page.get("course_order") is None:
         abort(404)
+    if not gated_module_visible(page.get("module"), is_admin(session["user"])):
+        abort(404)
     lessons = sorted(
-        [{"slug": s, **m} for s, m in pages.items() if m.get("course_order") is not None],
+        [{"slug": s, **m} for s, m in pages.items() if m.get("course_order") is not None
+         and gated_module_visible(m.get("module"), is_admin(session["user"]))],
         key=lambda it: it["course_order"],
     )
     idx = next(i for i, it in enumerate(lessons) if it["slug"] == slug)
@@ -529,6 +568,8 @@ def course_complete(slug):
     pages = github_store.pages_store.load()
     if slug not in pages or pages[slug].get("course_order") is None:
         abort(404)
+    if not gated_module_visible(pages[slug].get("module"), is_admin(session["user"])):
+        abort(404)
     if pages[slug].get("quiz"):
         abort(400)  # у урока есть тест — засчитывается только через него
     progress = github_store.progress_store.load()
@@ -552,6 +593,8 @@ def course_quiz_submit(slug):
     page = pages.get(slug)
     pool = page.get("quiz") if page else None
     if not page or page.get("course_order") is None or not pool:
+        abort(404)
+    if not gated_module_visible(page.get("module"), is_admin(session["user"])):
         abort(404)
 
     # Проверка по ТЕКСТУ выбранных вариантов, не по позиции — варианты
