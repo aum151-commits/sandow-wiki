@@ -18,7 +18,8 @@ TOKEN = os.environ["GITHUB_TOKEN_WORKFLOW"]
 REPO = os.environ.get("WIKI_REPO", "aum151-commits/sandow-automation")
 API_BASE = f"https://api.github.com/repos/{REPO}/contents"
 HEAD = {"Authorization": f"token {TOKEN}", "Accept": "application/vnd.github+json"}
-CACHE_TTL = 20  # секунд
+CACHE_TTL = 180  # секунд — 31.08.2026: 20с при реальном трафике исчерпало
+# часовой лимит GitHub API (5000 запросов) и уронило платформу на ~20 минут
 
 
 class JsonFileStore:
@@ -43,8 +44,15 @@ class JsonFileStore:
     def load(self, force=False):
         now = time.time()
         if force or self._cache["data"] is None or now - self._cache["ts"] > CACHE_TTL:
-            data, sha = self._fetch()
-            self._cache.update(data=data, sha=sha, ts=now)
+            try:
+                data, sha = self._fetch()
+                self._cache.update(data=data, sha=sha, ts=now)
+            except Exception:
+                # GitHub недоступен или лимит запросов исчерпан — отдаём
+                # последние известные данные вместо падения страницы, если
+                # они есть; иначе бросить дальше, отдать пустое нельзя
+                if self._cache["data"] is None:
+                    raise
         return self._cache["data"]
 
     def save(self, data, message: str):
