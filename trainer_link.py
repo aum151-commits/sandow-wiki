@@ -6,39 +6,49 @@
 (должно совпадать с тем, что он вводит в тренажёре).
 """
 import os
-from urllib.parse import urlsplit, urlunsplit, quote, urlencode
+from urllib.parse import urlsplit, urlunsplit, urlencode
 
 import requests
+from itsdangerous import URLSafeTimedSerializer
 
 TRAINER_URL = os.environ.get("TRAINER_URL", "https://sandow-voice-trainer.onrender.com")
 TRAINER_USER = os.environ.get("TRAINER_USER", "")
 TRAINER_PASSWORD = os.environ.get("TRAINER_PASSWORD", "")
 TIMEOUT = 45  # бесплатный тариф Render засыпает, первый запрос может будить сервис
 
+# 02.09.2026: ссылка раньше несла логин/пароль в адресе (user:pass@host) —
+# современные браузеры вырезают их из ссылки как защиту от фишинга, и
+# тренажёр снова спрашивал вход. Теперь вместо этого подписываем
+# одноразовый токен общим секретом TRAINER_PASSWORD (он одинаковый в .env
+# вики и тренажёра); тренажёр проверяет подпись и дальше держит сессию
+# сам — см. _check_auth в voice-trainer/app.py.
+_sso_serializer = (
+    URLSafeTimedSerializer(TRAINER_PASSWORD, salt="sandow-trainer-sso") if TRAINER_PASSWORD else None
+)
 
-def _link_with_credentials(url: str, user: str, password: str, manager: str = "") -> str:
-    """Ссылка со встроенным логином/паролем (user:pass@host) — переход по
-    клику проходит Basic Auth тренажёра сразу, без второго окна входа.
-    Если передано manager — тренажёр (app.js, читает ?manager=) сам
-    подставит имя сотрудника в поле старта тренировки, не нужно вводить
-    вручную и не будет расхождений в написании имени между сессиями."""
+
+def _sso_link(url: str, manager: str = "") -> str:
+    if not _sso_serializer:
+        return url
+    token = _sso_serializer.dumps({"manager": manager})
     parts = urlsplit(url)
-    netloc = f"{quote(user)}:{quote(password)}@{parts.netloc}" if user else parts.netloc
-    query = urlencode({"manager": manager}) if manager else parts.query
-    return urlunsplit((parts.scheme, netloc, parts.path, query, parts.fragment))
+    params = {"sso": token}
+    if manager:
+        params["manager"] = manager
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(params), parts.fragment))
 
 
-TRAINER_LINK_URL = _link_with_credentials(TRAINER_URL, TRAINER_USER, TRAINER_PASSWORD)
+TRAINER_LINK_URL = _sso_link(TRAINER_URL)
 
 
 def manager_trainer_link(account: dict) -> str:
     """Персональная ссылка на тренажёр для конкретного сотрудника — с
-    Basic Auth и его именем в ?manager=, чтобы попадал в тренажёр без
-    единого лишнего клика или ввода. Имя — из профиля (trainer_name),
-    если не указано — имя из вики (display_name), чтобы работало сразу,
-    без обязательной ручной настройки профиля."""
+    одноразовым подписанным пропуском и его именем в ?manager=, чтобы
+    попадал в тренажёр без единого лишнего клика или ввода. Имя — из
+    профиля (trainer_name), если не указано — имя из вики (display_name),
+    чтобы работало сразу, без обязательной ручной настройки профиля."""
     manager = (account.get("trainer_name") or account.get("display_name") or "").strip()
-    return _link_with_credentials(TRAINER_URL, TRAINER_USER, TRAINER_PASSWORD, manager=manager)
+    return _sso_link(TRAINER_URL, manager=manager)
 
 
 def best_score(manager_name: str):
