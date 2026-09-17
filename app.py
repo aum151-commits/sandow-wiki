@@ -461,6 +461,19 @@ def gated_module_visible(module: str, is_admin_user: bool) -> bool:
     return bool(github_store.settings_store.load().get("show_" + module, False))
 
 
+@app.get("/calculator")
+def calculator():
+    """Калькулятор арендных каникул — менеджер открывает его прямо здесь и
+    показывает тренеру на встрече. Лежит на платформе, потому что менеджер
+    уже залогинен: отдельную ссылку и пароль помнить не нужно."""
+    guard = require_login()
+    if guard:
+        return guard
+    path = os.path.join(os.path.dirname(__file__), "static", "calculator.html")
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
 @app.get("/course")
 def course_list():
     guard = require_login()

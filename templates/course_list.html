@@ -5,6 +5,11 @@
 <p style="color:var(--muted)">День {{ day_n }} с начала обучения</p>
 <p><a href="{{ url_for('course_progress_overview') }}">Прогресс всей команды →</a></p>
 
+<a href="{{ url_for('calculator') }}" style="display:block;text-decoration:none;background:linear-gradient(135deg,#241A0B,#0B0906);color:#E9C77E;border-radius:14px;padding:16px 18px;margin:14px 0 18px;">
+  <span style="display:block;font-size:17px;font-weight:700;color:#fff;">Калькулятор аренды для встречи с тренером</span>
+  <span style="display:block;font-size:13px;color:#cfc2a4;margin-top:4px;">Открыть и показать прямо на встрече: сколько аренды закроют его клиенты →</span>
+</a>
+
 {% if current_user_is_admin and gated_status %}
 <div class="card" style="margin-bottom:20px; border-color:var(--accent)">
   <p style="margin:0 0 8px; font-weight:600">Разделы на паузе (видны только вам, пока не откроете)</p>
