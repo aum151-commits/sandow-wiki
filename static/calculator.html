@@ -143,8 +143,6 @@
   }
 
   .result {
-    position: sticky;
-    top: 8px;
     z-index: 5;
     background: var(--card);
     border: 1px solid var(--line);
@@ -153,6 +151,30 @@
     padding: 18px 18px 16px;
     margin-bottom: 18px;
   }
+  /* Компактная строка итога — всегда на виду, когда карточка уехала вверх.
+     Раньше прилипала вся карточка: она занимала четверть экрана и блоки
+     уезжали под неё — на встрече это выглядело как поломка. */
+  .mini {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+    padding: 10px 16px;
+    margin: 0 0 14px;
+    font-size: 14px;
+  }
+  .mini-pct { font-weight: 800; font-size: 19px; color: var(--accent); white-space: nowrap; }
+  .mini-track { flex: 1; height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .mini-fill { height: 100%; width: 0; border-radius: 999px; background: var(--accent); transition: width .25s ease; }
+  .mini-fill.is-covered { background: #4f7a2a; }
+  .mini-days { color: var(--text-muted); white-space: nowrap; }
+
   .result-top {
     display: flex;
     align-items: baseline;
@@ -349,6 +371,12 @@
       <span class="status-dot"></span>
       <span id="statusText">Добавьте клиентов и тренировки ниже — расчёт обновится сам.</span>
     </div>
+  </div>
+
+  <div class="mini">
+    <span class="mini-pct" id="miniPct">0%</span>
+    <span class="mini-track"><span class="mini-fill" id="miniBar"></span></span>
+    <span class="mini-days" id="miniDays">0 дн.</span>
   </div>
 
   <div class="group">
@@ -579,6 +607,12 @@
     var bar = document.getElementById('bar');
     bar.style.width = pct + '%';
     bar.classList.toggle('is-covered', pct >= 100);
+
+    document.getElementById('miniPct').textContent = pct + '%';
+    document.getElementById('miniDays').textContent = fmtDays(totalDays) + ' дн. · ' + fmtMoney(totalMoney);
+    var mb = document.getElementById('miniBar');
+    mb.style.width = pct + '%';
+    mb.classList.toggle('is-covered', pct >= 100);
 
     var pill = document.getElementById('statusPill');
     var text = document.getElementById('statusText');
