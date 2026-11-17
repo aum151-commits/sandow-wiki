@@ -1,28 +1,67 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Прогресс команды — Лига Сандов{% endblock %}
 {% block content %}
-<h1>Прогресс команды</h1>
-<p style="color:var(--muted)">Всего уроков: {{ total }}</p>
+<style>
+  .pg-head { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:4px }
+  .pg-head h1 { margin:0 }
+  .pg-sum { color:var(--muted); font-size:14px }
+  .pg-row {
+    display:grid; grid-template-columns: 1fr 210px 130px; gap:14px; align-items:center;
+    padding:14px 4px; border-bottom:1px solid rgba(0,0,0,.08);
+  }
+  .pg-row:last-child { border-bottom:0 }
+  .pg-name { font-weight:600; font-size:16px; line-height:1.25 }
+  .pg-note { color:var(--muted); font-size:13px; margin-top:2px }
+  .pg-bar { height:10px; border-radius:6px; background:#e8e6e1; overflow:hidden }
+  .pg-bar span { display:block; height:100%; border-radius:6px; background:#2f7d43 }
+  .pg-bar.amber span { background:#b8860b }
+  .pg-bar.red span { background:#c0392b }
+  .pg-num { font-size:14px; margin-top:6px; color:var(--muted) }
+  .pg-num b { color:#26262b; font-size:15px }
+  .pg-right { text-align:right }
+  .pg-badge { display:inline-block; padding:3px 9px; border-radius:999px; font-size:12.5px; white-space:nowrap }
+  .pg-badge.green { background:#e3f3e6; color:#1e6b2e }
+  .pg-badge.amber { background:#fbf0d5; color:#8a5c00 }
+  .pg-badge.red { background:#fbe4e1; color:#a5281b }
+  .pg-badge.grey { background:#ececec; color:#5c5c5c }
+  .pg-when { color:var(--muted); font-size:12.5px; margin-top:6px }
+  @media (max-width: 640px) {
+    .pg-row { grid-template-columns: 1fr; gap:8px }
+    .pg-right { text-align:left }
+  }
+</style>
+
 <div class="card">
+  <div class="pg-head">
+    <h1>Прогресс команды</h1>
+    <span class="pg-sum">{{ started }} из {{ rows|length }} начали · всего уроков {{ total }}</span>
+  </div>
+
   {% if rows %}
-  <ul class="page-list">
-    {% for r in rows %}
-    <li>
+  {% for r in rows %}
+  <div class="pg-row">
+    <div>
       {% if can_see_overdue or r.username == current_user %}
-      <a href="{{ url_for('course_progress_detail', username=r.username) }}">{{ r.name }}</a>
+      <div class="pg-name"><a href="{{ url_for('course_progress_detail', username=r.username) }}">{{ r.name }}</a></div>
       {% else %}
-      {{ r.name }}
+      <div class="pg-name">{{ r.name }}</div>
       {% endif %}
-      {% if r.certified %}<span class="lesson-flag" style="background:#e3f3e6; color:#1e6b2e">допущен к звонкам</span>{% endif %}
-      {% if can_see_overdue and r.overdue %}<span class="lesson-flag overdue">просрочено уроков: {{ r.overdue }}</span>{% endif %}
-      <div class="meta">
-        {{ r.done }} / {{ total }} уроков{% if total %} · {{ (r.done / total * 100) | round | int }}%{% endif %}
-        · день {{ r.day_n }}
-        {% if r.buddy and r.buddy.mentor %} · наставник: {{ r.buddy.mentor }}{% endif %}
+      <div class="pg-note">
+        {% if r.role_note %}{{ r.role_note }}{% endif %}
+        {% if r.certified %}{% if r.role_note %} · {% endif %}допуск к звонкам есть{% endif %}
+        {% if r.buddy and r.buddy.mentor %}{% if r.role_note or r.certified %} · {% endif %}наставник: {{ r.buddy.mentor }}{% endif %}
       </div>
-    </li>
-    {% endfor %}
-  </ul>
+    </div>
+    <div>
+      <div class="pg-bar {{ r.tone }}"><span style="width: {{ r.percent }}%"></span></div>
+      <div class="pg-num"><b>{{ r.done }}</b> из {{ total }} уроков · {{ r.percent }}%</div>
+    </div>
+    <div class="pg-right">
+      <span class="pg-badge {{ r.tone }}">{{ r.status }}</span>
+      <div class="pg-when">заходил: {{ r.idle_text }}</div>
+    </div>
+  </div>
+  {% endfor %}
   {% else %}
   <p style="color:var(--muted)">Пока никто не зарегистрирован.</p>
   {% endif %}

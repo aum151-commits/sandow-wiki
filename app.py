@@ -702,25 +702,38 @@ def course_quiz_submit(slug):
 
 @app.get("/course/progress")
 def course_progress_overview():
-    """Общая таблица прогресса — видно всем, у кого есть логин (внутренняя команда)."""
+    """Прогресс команды одной строкой на человека.
+
+    17.11.2026, просьба Ольги: «их очень много тут … не знаю, как это надо
+    интерфейс доработать чтобы прогресс был более очевидно как то показывался
+    по каждому сотруднику». Поэтому вместо списка с мелким текстом — строка
+    на человека: полоса «сколько пройдено из всех уроков», дата последнего
+    захода и понятный статус.
+    """
     guard = require_login()
     if guard:
         return guard
     pages = github_store.pages_store.load()
     lessons = sorted(
-        [{"slug": s, **m} for s, m in pages.items() if m.get("course_order") is not None],
+        [{"slug": s, **m} for s, m in pages.items() if m.get("course_order") is not None
+         # найм тренеров — не курс отдела продаж: у менеджеров его в зачёте нет,
+         # иначе полоса «пройдено» никогда не доходит до конца
+         and "Тренер Хаб" not in (m.get("module") or "")],
         key=lambda it: it["course_order"],
     )
     users = github_store.users_store.load()
-    progress = github_store.progress_store.load()
     viewer = users.get(session.get("user"), {})
+    progress = github_store.progress_store.load()
+    attempts = github_store.attempts_store.load()
     # видеть просрочки — отдельное право от админки сайта: Олег должен
     # видеть детали прогресса ОП, но не должен получать доступ к
     # управлению аккаунтами (/admin/users). Просьба Ольги 25.08.2026:
     # публичный флаг «отстаёт» демотивирует рядовых, руководителям нужен.
     can_see_overdue = viewer.get("role") == "admin" or viewer.get("see_progress_detail")
+    today = datetime.now(timezone.utc).date()
+
     rows = []
-    for username, account in sorted(users.items(), key=lambda kv: kv[1].get("display_name", kv[0])):
+    for username, account in users.items():
         if account.get("role") == "admin" or account.get("exclude_from_progress"):
             continue
         user_progress = progress.get(username, {})
@@ -731,13 +744,77 @@ def course_progress_overview():
             if lesson.get("plan_day") is not None and lesson["plan_day"] <= day_n
             and lesson["slug"] not in user_progress
         )
+        last_seen = _last_seen(username, user_progress, attempts, account)
+        idle = None
+        if last_seen:
+            try:
+                idle = (today - date.fromisoformat(last_seen)).days
+            except ValueError:
+                idle = None
+        percent = round(done / len(lessons) * 100) if lessons else 0
+        if done >= len(lessons) and lessons:
+            status, tone = "всё пройдено", "green"
+        elif not done and idle is None:
+            status, tone = "не начинал", "grey"
+        elif idle is not None and idle >= 14:
+            status, tone = f"не заходил {idle} дн.", "red"
+        elif can_see_overdue and overdue:
+            status, tone = f"отстаёт: {overdue}", "amber"
+        else:
+            status, tone = "в графике", "green"
         cert = account.get("cert_status", {})
         rows.append({
-            "username": username, "name": account.get("display_name", username), "done": done, "day_n": day_n,
-            "overdue": overdue, "certified": cert.get("passed", False),
+            "username": username,
+            "name": account.get("display_name", username),
+            "role_note": _role_note(account),
+            "done": done, "percent": percent, "overdue": overdue,
+            "last_seen": last_seen, "idle": idle,
+            "idle_text": _idle_text(idle, last_seen),
+            "status": status, "tone": tone,
+            "certified": cert.get("passed", False),
             "buddy": account.get("buddy", {}),
         })
-    return render_template("course_progress.html", rows=rows, total=len(lessons), can_see_overdue=can_see_overdue)
+    rows.sort(key=lambda r: (-r["done"], r["name"].lower()))
+    return render_template(
+        "course_progress.html", rows=rows, total=len(lessons),
+        can_see_overdue=can_see_overdue,
+        started=sum(1 for r in rows if r["done"]),
+    )
+
+
+def _role_note(account: dict) -> str:
+    """Короткая подпись роли: чтобы в строке было видно, кто руководитель."""
+    name = str(account.get("display_name") or "")
+    if "—" in name:
+        return name.split("—", 1)[1].strip()
+    return ""
+
+
+def _last_seen(username: str, user_progress: dict, attempts: dict, account: dict | None = None) -> str:
+    """Дата последнего захода: самая свежая отметка в прогрессе или в тестах."""
+    dates: list[str] = []
+    for value in (user_progress or {}).values():
+        if isinstance(value, dict) and value.get("at"):
+            dates.append(str(value["at"])[:10])
+    for attempt in attempts.get(username, []) or []:
+        if isinstance(attempt, dict) and attempt.get("at"):
+            dates.append(str(attempt["at"])[:10])
+    streak = (account or {}).get("streak") or {}
+    if streak.get("last_activity_date"):
+        dates.append(str(streak["last_activity_date"])[:10])
+    return max(dates) if dates else ""
+
+
+def _idle_text(idle: int | None, last_seen: str) -> str:
+    if not last_seen:
+        return "дата не записана"
+    if idle == 0:
+        return "сегодня"
+    if idle == 1:
+        return "вчера"
+    if idle is None:
+        return last_seen
+    return f"{idle} дн. назад"
 
 
 def _can_see_progress_detail(username_of_viewer: str) -> bool:
