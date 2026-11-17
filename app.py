@@ -100,6 +100,30 @@ def is_admin(username) -> bool:
     return users.get(username, {}).get("role") == "admin"
 
 
+def can_edit(username) -> bool:
+    """Кто правит стандарты и видит историю правок.
+
+    17.11.2026, слова Ольги: «конечно им этого вообще не надо знать! это не
+    их дело! … Их дело — учиться и выполнять стандарты компании». Значит
+    менеджеры только читают и учатся; правка и история правок — у руководства
+    (админ и те, кому выдан признак can_edit_pages).
+    """
+    if not username:
+        return False
+    users = github_store.users_store.load()
+    account = users.get(username, {})
+    return account.get("role") == "admin" or bool(account.get("can_edit_pages"))
+
+
+def require_can_edit():
+    guard = require_login()
+    if guard:
+        return guard
+    if not can_edit(session["user"]):
+        abort(403)
+    return None
+
+
 @app.context_processor
 def inject_user():
     username = session.get("user")
@@ -115,6 +139,7 @@ def inject_user():
         "current_user": username,
         "current_user_name": display_name(username),
         "current_user_is_admin": is_admin(username),
+        "current_user_can_edit": can_edit(username),
         "trainer_url": trainer_url,
     }
 
@@ -864,7 +889,7 @@ def wiki_list():
 
 @app.get("/wiki/new")
 def wiki_new_form():
-    guard = require_login()
+    guard = require_can_edit()
     if guard:
         return guard
     return render_template("wiki_edit.html", page=None, slug=None, quiz_text="", tags_text="",
@@ -874,7 +899,7 @@ def wiki_new_form():
 @app.post("/wiki/new")
 def wiki_new():
     course_order = request.form.get("course_order", "").strip()
-    guard = require_admin() if course_order else require_login()
+    guard = require_can_edit()
     if guard:
         return guard
     title = request.form.get("title", "").strip() or "Без названия"
@@ -924,7 +949,7 @@ def page_history(slug):
     # 17.11.2026, слова Ольги: «конечно им этого вообще не надо знать! это не
     # их дело!» — история правок и кто что менял касается руководства, а не
     # менеджеров. Поэтому страница закрыта админом, не просто входом.
-    guard = require_admin()
+    guard = require_can_edit()
     if guard:
         return guard
     pages = github_store.pages_store.load()
@@ -947,8 +972,7 @@ def page_history(slug):
 def wiki_edit_form(slug):
     pages = github_store.pages_store.load()
     page = pages.get(slug)
-    is_lesson = bool(page and page.get("course_order") is not None)
-    guard = require_admin() if is_lesson else require_login()
+    guard = require_can_edit()
     if guard:
         return guard
     if not page:
@@ -964,8 +988,7 @@ def wiki_edit_form(slug):
 def wiki_edit(slug):
     pages = github_store.pages_store.load()
     course_order = request.form.get("course_order", "").strip()
-    was_lesson = slug in pages and pages[slug].get("course_order") is not None
-    guard = require_admin() if (course_order or was_lesson) else require_login()
+    guard = require_can_edit()
     if guard:
         return guard
     if slug not in pages:
@@ -999,8 +1022,7 @@ def wiki_edit(slug):
 @app.post("/wiki/<slug>/delete")
 def wiki_delete(slug):
     pages = github_store.pages_store.load()
-    is_lesson = slug in pages and pages[slug].get("course_order") is not None
-    guard = require_admin() if is_lesson else require_login()
+    guard = require_can_edit()
     if guard:
         return guard
     if slug in pages:
