@@ -921,7 +921,10 @@ def wiki_view(slug):
 
 @app.get("/wiki/<slug>/history")
 def page_history(slug):
-    guard = require_login()
+    # 17.11.2026, слова Ольги: «конечно им этого вообще не надо знать! это не
+    # их дело!» — история правок и кто что менял касается руководства, а не
+    # менеджеров. Поэтому страница закрыта админом, не просто входом.
+    guard = require_admin()
     if guard:
         return guard
     pages = github_store.pages_store.load()
