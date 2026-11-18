@@ -763,7 +763,11 @@ def course_progress_overview():
         else:
             status, tone = "в графике", "green"
         cert = account.get("cert_status", {})
+        quiz_slugs = [l["slug"] for l in lessons if l.get("quiz")]
+        tests_passed = sum(1 for s in quiz_slugs if s in user_progress)
         rows.append({
+            "tests_passed": tests_passed,
+            "tests_total": len(quiz_slugs),
             "username": username,
             "name": account.get("display_name", username),
             "role_note": _role_note(account),
@@ -774,6 +778,11 @@ def course_progress_overview():
             "certified": cert.get("passed", False),
             "buddy": account.get("buddy", {}),
         })
+    # 18.11.2026: менеджер видит только себя — «их дело учиться и выполнять
+    # стандарты», а чужие успехи и отставания не его дело. Руководство и
+    # куратор видят всех.
+    if not can_see_overdue:
+        rows = [r for r in rows if r["username"] == session.get("user")]
     rows.sort(key=lambda r: (-r["done"], r["name"].lower()))
     return render_template(
         "course_progress.html", rows=rows, total=len(lessons),
